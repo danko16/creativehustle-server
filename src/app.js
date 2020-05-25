@@ -1,11 +1,11 @@
 require('module-alias/register');
-const express = require('express'),
-  app = express(),
-  mongoose = require('mongoose'),
-  helmet = require('helmet'),
-  cors = require('cors'),
-  RateLimit = require('express-rate-limit'),
-  config = require('@config');
+const express = require('express');
+const app = express();
+const mongoose = require('mongoose');
+const helmet = require('helmet');
+const cors = require('cors');
+const RateLimit = require('express-rate-limit');
+const config = require('@config');
 
 mongoose.Promise = global.Promise;
 const option = {
@@ -36,5 +36,7 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 app.use('/uploads', express.static(config.uploads));
 app.use('/documents', express.static(config.documents));
+
+app.use('/auth', limitedAccess, require('./routes/auth'));
 
 module.exports = app;

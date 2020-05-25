@@ -1,48 +1,18 @@
 require('module-alias/register');
-const app = require('./app');
-const debug = require('debug')('api:server');
-const http = require('http');
+const { createLogger, format, transports } = require('winston');
 const config = require('@config');
-const port = normalizePort(process.env.PORT || config.port);
 
-app.set('port', port);
+const app = require('./app');
 
-const server = http.createServer(app);
+const logger = createLogger({
+  format: format.combine(format.splat(), format.simple()),
+  transports: [new transports.Console()],
+});
 
-server.listen(port);
-server.on('error', onError);
-server.on('listening', onListening);
+process.on('unhandledRejection', (reason, p) => {
+  logger.error('Unhandled Rejection at: Promise %s %s', p, reason);
+});
 
-function normalizePort(val) {
-  const port = parseInt(val, 10);
-  if (isNaN(port)) return val;
-  if (port >= 0) return port;
-  return false;
-}
+const server = app.listen(config.port);
 
-function onError(error) {
-  if (error.syscall !== 'listen') throw error;
-
-  const bind = typeof port === 'string' ? 'Pipe ' + port : 'Port ' + port;
-
-  switch (error.code) {
-    case 'EACCES':
-      console.error(bind + ' requires elevated privileges');
-      process.exit(1);
-      break;
-    case 'EADDRINUSE':
-      console.error(bind + ' is already in use');
-      process.exit(1);
-      break;
-    default:
-      throw error;
-  }
-}
-
-function onListening() {
-  const addr = server.address();
-  const bind = typeof addr === 'string' ? 'pipe ' + addr : 'port ' + addr.port;
-  debug('Listening on ' + bind);
-}
-
-console.log('Server running on : ' + port);
+server.on('listening', () => logger.info('server started on %s:%d', config.host, config.port));
