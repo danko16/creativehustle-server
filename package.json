@@ -11,7 +11,7 @@
   "scripts": {
     "start": "node src/",
     "dev": "node_modules/.bin/nodemon --exec node src/",
-    "eslint": "node_modules/.bin/eslint --fix src/ --config .eslintrc.json"
+    "eslint": "node_modules/.bin/eslint --fix src/ --config .eslintrc"
   },
   "keywords": [],
   "author": "",
@@ -34,9 +34,8 @@
   },
   "lint-staged": {
     "src/**/*.js": [
-      "node_modules/.bin/prettier --config --write",
-      "node_modules/.bin/eslint --fix",
-      "git add"
+      "prettier --write",
+      "eslint --fix"
     ]
   },
   "devDependencies": {
