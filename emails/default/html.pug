@@ -1,0 +1,79 @@
+doctype html
+head
+  meta(charset='UTF-8')
+  meta(name='viewport' content='width=device-width, initial-scale=1.0')
+  title Document
+  style.
+    body {
+    margin: 0;
+    padding: 0;
+    background-color: #f8f8f9;
+    }
+    .container {
+    max-width: 800px;
+    background-color: #fff;
+    margin: 0 auto;
+    }
+    .header {
+    position: relative;
+    height: 200px;
+    }
+    .content {
+    min-height: 400px;
+    }
+    .footer {
+    height: 300px;
+    background-color: #2b303a;
+    }
+    .header img {
+    position: absolute;
+    display: block;
+    left: 50%;
+    top: 50%;
+    margin-left: -100px;
+    margin-top: -75px;
+    width: 200px;
+    height: 150px;
+    }
+    .content > * {
+    margin: 12px auto;
+    text-align: center;
+    max-width: 350px;
+    }
+    .content .button {
+    display: flex;
+    background-color: #1aa19c;
+    cursor: pointer;
+    width: 250px;
+    height: 75px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 40px;
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+    }
+    .content .button a {
+    font-size: 1.25em;
+    text-decoration: none;
+    color: white;
+    }
+.container
+  .header
+    img(alt="I'm an image" src='images/Img1_2x.jpg')
+  .content
+    div(style='margin-top: 2rem;')
+      p(style='font-size: 24px; color: #2b303a;') #{headerText} 
+      span(style='font-size: 30px; color: #2b303a;')
+        strong #{subject}
+      p(style='color: #808389; font-size: 15px;')
+        | #{paragraph1}
+        | #{paragraph2}
+    .button
+      a(href=`${ctaLink}` target='_blank') #{ctaText}
+    p(style='margin-top: 2rem; word-wrap: break-word;')
+      | Or click link below: 
+      br
+      br
+      a(href=`${ctaLink}` target='_blank')
+        | #{ctaLink} 
+  .footer
