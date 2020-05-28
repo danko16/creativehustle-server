@@ -6,7 +6,7 @@ const config = require('@config');
 const response = require('@utils/response');
 const { encrypt, getRegisterToken, checkRegisterToken } = require('@utils/token');
 const { sendActivationEmail } = require('@utils/emails');
-const Users = require('@schema/users');
+const Students = require('@schema/students');
 const router = express.Router();
 
 const DateNow = moment().format('MM/DD/YYYY, HH:mm:ss');
@@ -38,12 +38,12 @@ router.post(
 
     const { full_name, email, password } = req.body;
     try {
-      let user = await Users.findOne({ email });
+      let user = await Students.findOne({ email });
       if (user) {
         return res.status(400).json(response(400, 'Email sudah terdaftar'));
       }
 
-      user = await Users.create({ full_name, email, password: encrypt(password) });
+      user = await Students.create({ full_name, email, password: encrypt(password) });
 
       const token = await getRegisterToken({ uid: user.id, for: 'register' });
       if (!token) {
@@ -79,7 +79,7 @@ router.get(
     }
     const { token, email } = req.query;
     try {
-      let user = await Users.findOne({ email });
+      let user = await Students.findOne({ email });
       if (!user) {
         return res.status(400).json(response(400, 'User tidak ditemukan'));
       }
@@ -89,7 +89,7 @@ router.get(
         return res.status(400).json(response(400, 'Token tidak sesuai!'));
       }
 
-      user = await Users.updateOne({ is_active: true, updated_date: DateNow });
+      user = await Students.updateOne({ is_active: true, updated_date: DateNow });
 
       return res.status(200).json(response(200, 'Konfirmasi email berhasil'));
     } catch (error) {

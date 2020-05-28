@@ -29,6 +29,7 @@
     "moment": "^2.26.0",
     "mongoose": "^5.9.15",
     "nodemailer": "^6.4.6",
+    "socket.io": "^2.3.0",
     "winston": "^3.2.1"
   },
   "husky": {

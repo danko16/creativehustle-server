@@ -60,24 +60,12 @@ exports.checkRegisterToken = async (token) => {
 
 exports.getTokenReset = async (payload) => {
   try {
-    //Exp in 2 hours
     let token = await jwt.sign(payload, config.jwtsecret, { expiresIn: '2h' });
-    let ciphertext = CryptoJS.AES.encrypt(token, config.aessecret);
-    let decrypted = CryptoJS.AES.decrypt(ciphertext.toString(), config.aessecret);
-    let nostring = decrypted.toString(CryptoJS.enc.Utf8);
-    return nostring;
-    // let token = await jwt.sign(payload, config.jwtsecret, { expiresIn: '2h' });
-    // return aes.encrypt(token, config.aessecret).toString();
+    return CryptoJS.AES.encrypt(token, config.aessecret);
   } catch (error) {
     console.log(error);
     return null;
   }
-};
-
-exports.decryptToken = async (token) => {
-  let decrypted = aes.decrypt(token, config.aessecret);
-  let nostring = decrypted.toString(CryptoJS.enc.Utf8);
-  return nostring.toString();
 };
 
 exports.checkTokenReset = async (token) => {
@@ -101,6 +89,12 @@ exports.checkTokenReset = async (token) => {
     console.log(error);
     return false;
   }
+};
+
+exports.decryptToken = async (token) => {
+  let decrypted = aes.decrypt(token, config.aessecret);
+  let nostring = decrypted.toString(CryptoJS.enc.Utf8);
+  return nostring.toString();
 };
 
 exports.getPayload = async (token) => {

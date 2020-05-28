@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const moment = require('moment');
 const objectId = mongoose.Schema.Types.ObjectId;
 const DateNow = moment().format('MM/DD/YYYY, HH:mm:ss');
-const usersSchema = new mongoose.Schema(
+const studentsSchema = new mongoose.Schema(
   {
     full_name: { type: String, required: [true, 'full name is required'] },
     timezone: { type: String, default: null },
@@ -17,6 +17,6 @@ const usersSchema = new mongoose.Schema(
     updated_date: { type: String, default: DateNow },
     last_login: { type: String, default: null },
   },
-  { collection: 'users' }
+  { collection: 'students' }
 );
-module.exports = mongoose.model('users', usersSchema);
+module.exports = mongoose.model('students', studentsSchema);
