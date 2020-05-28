@@ -5,16 +5,17 @@ const aes = require('crypto-js/aes');
 const config = require('@config');
 
 exports.isAllow = async (req, res, next) => {
-  if (!req.get('Authorization')) {
-    res.json({ status: 401, message: 'Sorry, Authentication required! :(' });
+  const token = req.headers['x-token'].split(' ')[1];
+  if (!token) {
+    res.status(401).json({ status: 401, message: 'Sorry, Authentication required! :(' });
   } else {
     //check token
-    let decrypted = aes.decrypt(req.get('Authorization'), config.aessecret);
+    let decrypted = aes.decrypt(token, config.aessecret);
     await jwt.verify(decrypted.toString(CryptoJS.enc.Utf8), config.jwtsecret, function (
       err,
       decoded
     ) {
-      if (err) res.json({ status: 401, message: 'Sorry, Authentication required! :(' });
+      if (err) res.status(401).json({ status: 401, message: 'Sorry, Authentication required! :(' });
       else next();
     });
   }
