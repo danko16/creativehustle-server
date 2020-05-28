@@ -14,11 +14,7 @@ process.on('unhandledRejection', (reason, p) => {
   logger.error('Unhandled Rejection at: Promise %s %s', p, reason);
 });
 
-io.on('connection', (socket) => {
-  socket.on('online', (token) => {
-    console.log('user online', token);
-  });
-});
+io.on('connection', (socket) => {});
 
 server.on('listening', () => logger.info('server started on %s:%d', config.host, config.port));
 server.listen(config.port);

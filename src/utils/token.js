@@ -99,10 +99,7 @@ exports.decryptToken = async (token) => {
 
 exports.getPayload = async (token) => {
   try {
-    let ciphertext = CryptoJS.AES.encrypt(token, config.aessecret);
-    let decrypted = CryptoJS.AES.decrypt(ciphertext.toString(), config.aessecret);
-    let nostring = decrypted.toString(CryptoJS.enc.Utf8);
-    let verified = await jwt.verify(nostring.toString(), config.jwtsecret, function (err, decoded) {
+    let verified = await jwt.verify(token, config.jwtsecret, function (err, decoded) {
       if (err) return false;
       else return decoded;
     });

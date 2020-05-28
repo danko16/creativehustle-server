@@ -4,7 +4,13 @@ const { body, query, validationResult } = require('express-validator');
 const moment = require('moment');
 const config = require('@config');
 const response = require('@utils/response');
-const { encrypt, getRegisterToken, checkRegisterToken } = require('@utils/token');
+const {
+  encrypt,
+  getToken,
+  getRegisterToken,
+  checkRegisterToken,
+  getPayload,
+} = require('@utils/token');
 const { sendActivationEmail } = require('@utils/emails');
 const Students = require('@schema/students');
 const router = express.Router();
@@ -38,27 +44,42 @@ router.post(
 
     const { full_name, email, password } = req.body;
     try {
-      let user = await Students.findOne({ email });
-      if (user) {
+      let student = await Students.findOne({ email });
+
+      if (student) {
         return res.status(400).json(response(400, 'Email sudah terdaftar'));
       }
 
-      user = await Students.create({ full_name, email, password: encrypt(password) });
+      student = await Students.create({ full_name, email, password: encrypt(password) });
 
-      const token = await getRegisterToken({ uid: user.id, for: 'register' });
-      if (!token) {
+      const registerToken = await getRegisterToken({ uid: student._id, for: 'register' });
+      if (!registerToken) {
         return res.status(500).json(response(500, 'Internal Server Error!'));
       }
 
-      const tokenUrl = `${config.domain}/auth/confirm-email?token=${token}&email=${user.email}`;
+      const tokenUrl = `${config.domain}/auth/confirm-email?token=${registerToken}&email=${student.email}`;
 
       await sendActivationEmail({
-        email: user.email,
-        name: user.full_name,
+        email: student.email,
+        name: student.full_name,
         tokenUrl,
       });
 
-      return res.status(200).json(response(200, 'Registrasi berhasil'));
+      const token = await getToken({ uid: student._id, type: 'student' });
+      let getExpToken = await getPayload(token.pure);
+
+      const payload = Object.freeze({
+        token: { key: token.key, exp: getExpToken.exp },
+        user: {
+          id: student._id,
+          name: student.full_name,
+          email: student.email,
+          phone: student.phone ? student.phone : null,
+        },
+        type: 'student',
+      });
+
+      return res.status(200).json(response(200, 'Registrasi berhasil', payload));
     } catch (error) {
       return res.status(500).json(response(500, 'Internal Server Error!', error));
     }
@@ -79,9 +100,9 @@ router.get(
     }
     const { token, email } = req.query;
     try {
-      let user = await Students.findOne({ email });
-      if (!user) {
-        return res.status(400).json(response(400, 'User tidak ditemukan'));
+      let student = await Students.findOne({ email });
+      if (!student) {
+        return res.status(400).json(response(400, 'student tidak ditemukan'));
       }
 
       const verifyToken = await checkRegisterToken(token.replace(/ /g, '+'));
@@ -89,7 +110,7 @@ router.get(
         return res.status(400).json(response(400, 'Token tidak sesuai!'));
       }
 
-      user = await Students.updateOne({ is_active: true, updated_date: DateNow });
+      await Students.updateOne({ _id: student._id }, { is_active: true, updated_date: DateNow });
 
       return res.status(200).json(response(200, 'Konfirmasi email berhasil'));
     } catch (error) {
