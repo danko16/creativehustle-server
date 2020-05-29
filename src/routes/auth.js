@@ -51,7 +51,12 @@ router.post(
         return res.status(400).json(response(400, 'Email sudah terdaftar'));
       }
 
-      student = await Students.create({ full_name, email, password: encrypt(password) });
+      student = await Students.create({
+        full_name,
+        email,
+        password: encrypt(password),
+        last_login: DateNow,
+      });
 
       const registerToken = await getRegisterToken({ uid: student._id, for: 'register' });
       if (!registerToken) {
@@ -118,6 +123,7 @@ router.post(
         return res.status(400).json(response(400, 'Password salah!'));
       }
 
+      await user.updateOne({ last_login: DateNow });
       const token = await getToken({ uid: user._id, rememberMe: remember_me, type });
       let getExpToken = await getPayload(token.pure);
 

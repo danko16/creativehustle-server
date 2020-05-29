@@ -93,8 +93,7 @@ exports.checkTokenReset = async (token) => {
 
 exports.decryptToken = async (token) => {
   let decrypted = aes.decrypt(token, config.aessecret);
-  let nostring = decrypted.toString(CryptoJS.enc.Utf8);
-  return nostring.toString();
+  return decrypted.toString(CryptoJS.enc.Utf8);
 };
 
 exports.getPayload = async (token) => {
