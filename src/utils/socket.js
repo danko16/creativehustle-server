@@ -37,6 +37,7 @@ const postAuthenticate = async (socket, data) => {
 
 const disconnect = async (socket) => {
   if (socket.client.key) {
+    console.log('disconnected');
     const { key } = socket.client;
     const token = await decryptToken(key);
     const jwt = await getPayload(token);

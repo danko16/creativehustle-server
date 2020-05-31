@@ -65,6 +65,7 @@ router.post(
         email,
         password: encrypt(password),
         last_login: DateNow,
+        is_online: true,
       });
 
       const registerToken = await getRegisterToken({ uid: student._id, for: 'register' });
@@ -132,7 +133,7 @@ router.post(
         return res.status(400).json(response(400, 'Password salah!'));
       }
 
-      await user.updateOne({ last_login: DateNow });
+      await user.updateOne({ last_login: DateNow, is_online: true });
       const token = await getToken({ uid: user._id, rememberMe: remember_me, type });
       let getExpToken = await getPayload(token.pure);
 
