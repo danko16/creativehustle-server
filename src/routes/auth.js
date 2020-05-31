@@ -11,12 +11,21 @@ const {
   checkRegisterToken,
   getPayload,
 } = require('@utils/token');
+const { isAllow } = require('@utils/auth');
 const { sendActivationEmail } = require('@utils/emails');
 const Students = require('@schema/students');
 const Tutors = require('@schema/tutors');
 const router = express.Router();
 
 const DateNow = moment().format('MM/DD/YYYY, HH:mm:ss');
+
+router.post('/is-allow', isAllow, async (req, res) => {
+  try {
+    return res.status(200).json(response(200, 'Allowed!'));
+  } catch (error) {
+    return res.status(500).json(response(500, 'Internal Server Error!'));
+  }
+});
 
 router.post(
   '/register',

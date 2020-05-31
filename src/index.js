@@ -4,6 +4,7 @@ const config = require('@config');
 const app = require('./app');
 const server = require('http').createServer(app);
 const io = require('socket.io')(server);
+const socketAuth = require('@utils/socket');
 
 const logger = createLogger({
   format: format.combine(format.splat(), format.simple()),
@@ -14,7 +15,7 @@ process.on('unhandledRejection', (reason, p) => {
   logger.error('Unhandled Rejection at: Promise %s %s', p, reason);
 });
 
-io.on('connection', (socket) => {});
+socketAuth(io);
 
 server.on('listening', () => logger.info('server started on %s:%d', config.host, config.port));
 server.listen(config.port);
