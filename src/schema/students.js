@@ -12,7 +12,6 @@ const studentsSchema = new mongoose.Schema(
     package: { type: [objectId] },
     avatar: { type: String, default: null },
     is_active: { type: Boolean, default: false },
-    is_online: { type: Boolean, default: false },
     created_date: { type: String, default: DateNow },
     updated_date: { type: String, default: DateNow },
     last_login: { type: String, default: null },
