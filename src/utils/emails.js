@@ -12,7 +12,7 @@ const emailSender = new Email({
   transport: transporter,
 });
 
-exports.sendPasswordReset = (data) => {
+const sendPasswordReset = (data) => {
   // transporter.template
   emailSender
     .send({
@@ -44,7 +44,7 @@ exports.sendPasswordReset = (data) => {
     });
 };
 
-exports.sendActivationEmail = (data) => {
+const sendActivationEmail = (data) => {
   // transporter.template
   emailSender
     .send({
@@ -69,3 +69,5 @@ exports.sendActivationEmail = (data) => {
       return false;
     });
 };
+
+module.exports = { sendPasswordReset, sendActivationEmail };

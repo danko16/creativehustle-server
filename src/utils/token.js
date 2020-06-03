@@ -5,7 +5,7 @@ const CryptoJS = require('crypto-js');
 const aes = require('crypto-js/aes');
 const config = require('@config');
 
-exports.encrypt = (pass) => {
+const encrypt = (pass) => {
   const hash = crypto
     .createHmac('sha256', pass)
     .update('83hgo3gh93uqogy8o4bhg3qngo39gibg934nu')
@@ -13,7 +13,7 @@ exports.encrypt = (pass) => {
   return hash;
 };
 
-exports.getToken = async (payload) => {
+const getToken = async (payload) => {
   try {
     let token;
     if (payload.rememberMe) {
@@ -28,7 +28,7 @@ exports.getToken = async (payload) => {
   }
 };
 
-exports.getRegisterToken = async (payload) => {
+const getRegisterToken = async (payload) => {
   try {
     let token = await jwt.sign(payload, config.jwtsecret, { expiresIn: '7d' });
     return aes.encrypt(token, config.aessecret).toString();
@@ -37,7 +37,7 @@ exports.getRegisterToken = async (payload) => {
   }
 };
 
-exports.checkRegisterToken = async (token) => {
+const checkRegisterToken = async (token) => {
   try {
     let decrypted = CryptoJS.AES.decrypt(token, config.aessecret);
     let verified = await jwt.verify(
@@ -58,7 +58,7 @@ exports.checkRegisterToken = async (token) => {
   }
 };
 
-exports.getTokenReset = async (payload) => {
+const getTokenReset = async (payload) => {
   try {
     let token = await jwt.sign(payload, config.jwtsecret, { expiresIn: '2h' });
     return CryptoJS.AES.encrypt(token, config.aessecret);
@@ -68,7 +68,7 @@ exports.getTokenReset = async (payload) => {
   }
 };
 
-exports.checkTokenReset = async (token) => {
+const checkTokenReset = async (token) => {
   try {
     let ciphertext = CryptoJS.AES.encrypt(token, config.aessecret);
     let decrypted = CryptoJS.AES.decrypt(ciphertext.toString(), config.aessecret);
@@ -91,12 +91,12 @@ exports.checkTokenReset = async (token) => {
   }
 };
 
-exports.decryptToken = async (token) => {
+const decryptToken = async (token) => {
   let decrypted = aes.decrypt(token, config.aessecret);
   return decrypted.toString(CryptoJS.enc.Utf8);
 };
 
-exports.getPayload = async (token) => {
+const getPayload = async (token) => {
   try {
     let verified = await jwt.verify(token, config.jwtsecret, function (err, decoded) {
       if (err) return false;
@@ -107,4 +107,15 @@ exports.getPayload = async (token) => {
     console.log(error);
     return false;
   }
+};
+
+module.exports = {
+  encrypt,
+  decryptToken,
+  getPayload,
+  getToken,
+  getRegisterToken,
+  getTokenReset,
+  checkRegisterToken,
+  checkTokenReset,
 };

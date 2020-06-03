@@ -1,3 +1,4 @@
+require('dotenv').config();
 const config = require('./config.global');
 config.email = {
   service: 'SendGrid',
@@ -12,6 +13,23 @@ config.email_sender = '"http://localhost:3000" no-reply@localhost:3000';
 config.domain = 'http://localhost:3000';
 config.host = 'http://localhost';
 config.port = 3000;
-config.db = 'danko';
+config.db = {
+  username: process.env.DEV_USER,
+  password: process.env.DEV_PASS,
+  database: process.env.DEV_DATABASE,
+  host: process.env.DEV_HOST,
+  dialect: 'mysql',
+  timezone: '+07:00',
+  dialectOptions: {
+    dateStrings: true,
+    typeCast: true,
+  },
+  pool: {
+    max: 50,
+    min: 0,
+    acquire: 1000000,
+    idle: 10000,
+  },
+};
 
 module.exports = config;

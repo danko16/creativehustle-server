@@ -1,23 +1,15 @@
 require('module-alias/register');
 const express = require('express');
 const { body, query, validationResult } = require('express-validator');
-const moment = require('moment');
 const config = require('@config');
-const response = require('@utils/response');
 const {
-  encrypt,
-  getToken,
-  getRegisterToken,
-  checkRegisterToken,
-  getPayload,
-} = require('@utils/token');
-const { isAllow } = require('@utils/auth');
-const { sendActivationEmail } = require('@utils/emails');
-const Students = require('@schema/students');
-const Tutors = require('@schema/tutors');
+  token: { encrypt, getToken, getRegisterToken, checkRegisterToken, getPayload },
+  auth: { isAllow },
+  emails: { sendActivationEmail },
+  response,
+} = require('@utils');
+const { students: Student, Teachers: Teacher } = require('@models');
 const router = express.Router();
-
-const DateNow = moment().format('MM/DD/YYYY, HH:mm:ss');
 
 router.post('/is-allow', isAllow, async (req, res) => {
   try {
@@ -45,6 +37,7 @@ router.post(
     body('password', 'passwords must be at least 6 chars long').exists().isLength({
       min: 6,
     }),
+    body('type', 'type should be present').exists(),
   ],
   async (req, res) => {
     const errors = validationResult(req);
@@ -52,47 +45,67 @@ router.post(
       return res.status(422).json(response(422, errors.array()));
     }
 
-    const { full_name, email, password } = req.body;
+    const { full_name, email, password, type } = req.body;
     try {
-      let student = await Students.findOne({ email });
+      let user;
+      if (type === 'student') {
+        let student = await Student.findOne({ where: { email } });
 
-      if (student) {
-        return res.status(400).json(response(400, 'Email sudah terdaftar'));
+        if (student) {
+          return res.status(400).json(response(400, 'Email sudah terdaftar'));
+        }
+
+        user = await Student.create(
+          Object.freeze({
+            full_name,
+            email,
+            password: encrypt(password),
+            is_active: false,
+            last_login: Date.now(),
+          })
+        );
+      } else if (type === 'teacher') {
+        let teacher = await Teacher.findOne({ where: { email } });
+
+        if (teacher) {
+          return res.status(400).json(response(400, 'Email sudah terdaftar'));
+        }
+
+        user = await Teacher.create(
+          Object.freeze({
+            full_name,
+            email,
+            password: encrypt(password),
+            is_active: false,
+            last_login: Date.now(),
+          })
+        );
       }
 
-      student = await Students.create({
-        full_name,
-        email,
-        password: encrypt(password),
-        last_login: DateNow,
-      });
-
-      const registerToken = await getRegisterToken({ uid: student._id, for: 'register' });
+      const registerToken = await getRegisterToken({ uid: user.id, for: 'register' });
       if (!registerToken) {
         return res.status(500).json(response(500, 'Internal Server Error!'));
       }
 
-      const tokenUrl = `${config.domain}/auth/confirm-email?token=${registerToken}&email=${student.email}`;
+      const tokenUrl = `${config.domain}/auth/confirm-email?token=${registerToken}&email=${user.email}&type=${type}`;
 
       await sendActivationEmail({
-        email: student.email,
-        name: student.full_name,
+        email: user.email,
+        name: user.full_name,
         tokenUrl,
       });
 
-      const token = await getToken({ uid: student._id, type: 'student' });
+      const token = await getToken({ uid: user.id, type: 'student' });
       let getExpToken = await getPayload(token.pure);
 
       const payload = Object.freeze({
         token: { key: token.key, exp: getExpToken.exp },
         user: {
-          id: student._id,
-          name: student.full_name,
-          email: student.email,
-          avatar: student.avatar,
-          phone: student.phone ? student.phone : null,
+          id: user.id,
+          name: user.full_name,
+          email: user.email,
         },
-        type: 'student',
+        type,
       });
 
       return res.status(200).json(response(200, 'Registrasi berhasil', payload));
@@ -118,9 +131,9 @@ router.post(
     try {
       let user;
       if (type === 'student') {
-        user = await Students.findOne({ email });
-      } else if (type === 'tutor') {
-        user = await Tutors.findOne({ email });
+        user = await Student.findOne({ where: { email } });
+      } else if (type === 'teacher') {
+        user = await Teacher.findOne({ where: { email } });
       }
 
       if (!user) {
@@ -132,18 +145,16 @@ router.post(
         return res.status(400).json(response(400, 'Password salah!'));
       }
 
-      await user.updateOne({ last_login: DateNow });
-      const token = await getToken({ uid: user._id, rememberMe: remember_me, type });
+      await user.update({ last_login: Date.now() });
+      const token = await getToken({ uid: user.id, rememberMe: remember_me, type });
       let getExpToken = await getPayload(token.pure);
 
       const payload = Object.freeze({
         token: { key: token.key, exp: getExpToken.exp },
         user: {
-          id: user._id,
+          id: user.id,
           name: user.full_name,
           email: user.email,
-          avatar: user.avatar,
-          phone: user.phone ? user.phone : null,
         },
         type,
       });
@@ -160,17 +171,24 @@ router.get(
   [
     query('token', 'token should be present').exists(),
     query('email', 'email should be present').exists(),
+    query('email', 'email should be present').exists(),
   ],
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(422).json(response(422, errors.array()));
     }
-    const { token, email } = req.query;
+    const { token, email, type } = req.query;
     try {
-      let student = await Students.findOne({ email });
-      if (!student) {
-        return res.status(400).json(response(400, 'student tidak ditemukan'));
+      let user;
+      if (type === 'student') {
+        user = await Student.findOne({ where: { email } });
+      } else if (type === 'teacher') {
+        user = await Teacher.findOne({ where: { email } });
+      }
+
+      if (!user) {
+        return res.status(400).json(response(400, 'User not found!'));
       }
 
       const verifyToken = await checkRegisterToken(token.replace(/ /g, '+'));
@@ -178,7 +196,7 @@ router.get(
         return res.status(400).json(response(400, 'Token tidak sesuai!'));
       }
 
-      await Students.updateOne({ _id: student._id }, { is_active: true, updated_date: DateNow });
+      await user.update({ is_active: true, updated_date: Date.now() });
 
       return res.status(200).json(response(200, 'Konfirmasi email berhasil'));
     } catch (error) {

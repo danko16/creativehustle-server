@@ -1,22 +1,10 @@
 require('module-alias/register');
 const express = require('express');
 const app = express();
-const mongoose = require('mongoose');
 const helmet = require('helmet');
 const cors = require('cors');
 const RateLimit = require('express-rate-limit');
 const config = require('@config');
-
-mongoose.Promise = global.Promise;
-const option = {
-  socketTimeoutMS: 3000000,
-  keepAlive: true,
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-};
-
-mongoose.connect('mongodb://localhost:27017/' + config.db, option);
-mongoose.set('useFindAndModify', false);
 
 const limitedAccess = new RateLimit({
   windowMs: 1 * 60 * 1000, // 15 minutes
