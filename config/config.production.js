@@ -9,6 +9,7 @@ config.email = {
   },
 };
 config.domain = 'http://localhost:3000';
+config.host = 'http://localhost';
 config.port = 3000;
 config.db = {
   username: process.env.PROD_USER,
