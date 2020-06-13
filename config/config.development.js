@@ -13,10 +13,10 @@ config.domain = 'http://localhost:3000';
 config.host = 'http://localhost';
 config.port = 3000;
 config.db = {
-  username: process.env.DEV_USER,
-  password: process.env.DEV_PASS,
-  database: process.env.DEV_DATABASE,
-  host: process.env.DEV_HOST,
+  username: 'root',
+  password: 'password',
+  database: 'creative_hustle',
+  host: '127.0.0.1',
   dialect: 'mysql',
   timezone: '+07:00',
   dialectOptions: {

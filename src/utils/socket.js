@@ -1,7 +1,6 @@
 const socketAuth = require('socketio-auth');
 const { decryptToken, getPayload } = require('./token');
-const Students = require('@schema/students');
-const Tutors = require('@schema/tutors');
+const { students: Students, tutors: Tutors } = require('../models');
 
 const authenticate = async (socket, data, callback) => {
   if (!data) {

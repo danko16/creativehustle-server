@@ -1,8 +1,7 @@
-require('module-alias/register');
 const { createLogger, format, transports } = require('winston');
-const config = require('@config');
+const config = require('../config');
 const app = require('./app');
-const { sequelize } = require('@models');
+const { sequelize } = require('./models');
 const server = require('http').createServer(app);
 
 const logger = createLogger({

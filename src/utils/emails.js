@@ -1,6 +1,5 @@
-require('module-alias/register');
 const nodemailer = require('nodemailer');
-const config = require('@config');
+const config = require('../../config');
 const Email = require('email-templates');
 const transporter = nodemailer.createTransport(config.email);
 

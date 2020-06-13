@@ -1,9 +1,8 @@
-require('module-alias/register');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const CryptoJS = require('crypto-js');
 const aes = require('crypto-js/aes');
-const config = require('@config');
+const config = require('../../config');
 
 const encrypt = (pass) => {
   const hash = crypto

@@ -1,14 +1,16 @@
-require('module-alias/register');
 const express = require('express');
 const { body, query, validationResult } = require('express-validator');
-const config = require('@config');
+const passport = require('./passport');
+const url = require('url');
+const config = require('../../config');
 const {
   token: { encrypt, getToken, getRegisterToken, checkRegisterToken, getPayload },
   auth: { isAllow },
   emails: { sendActivationEmail },
   response,
-} = require('@utils');
-const { students: Student, Teachers: Teacher } = require('@models');
+} = require('../utils');
+const { students: Student, Teachers: Teacher } = require('../models');
+
 const router = express.Router();
 
 router.post('/is-allow', isAllow, async (req, res) => {
@@ -62,6 +64,7 @@ router.post(
             password: encrypt(password),
             is_active: false,
             last_login: Date.now(),
+            provider: 'local',
           })
         );
       } else if (type === 'teacher') {
@@ -78,6 +81,7 @@ router.post(
             password: encrypt(password),
             is_active: false,
             last_login: Date.now(),
+            provider: 'local',
           })
         );
       }
@@ -140,6 +144,10 @@ router.post(
         return res.status(400).json(response(400, 'User not found!'));
       }
 
+      if (user.provider === 'google') {
+        return res.status(400).json(response(400, 'Login dengan Google'));
+      }
+
       const compare = encrypt(password) === user.password;
       if (!compare) {
         return res.status(400).json(response(400, 'Password salah!'));
@@ -171,7 +179,6 @@ router.get(
   [
     query('token', 'token should be present').exists(),
     query('email', 'email should be present').exists(),
-    query('email', 'email should be present').exists(),
   ],
   async (req, res) => {
     const errors = validationResult(req);
@@ -202,6 +209,40 @@ router.get(
     } catch (error) {
       return res.status(500).json(response(500, 'Internal Server Error!', error));
     }
+  }
+);
+
+router.get(
+  '/google',
+  passport.authenticate('google', {
+    scope: [
+      'https://www.googleapis.com/auth/plus.login',
+      'https://www.googleapis.com/auth/userinfo.email',
+    ],
+  })
+);
+
+router.get(
+  '/google/callback',
+  passport.authenticate('google', { failureRedirect: 'http://localhost:3006/login' }),
+  async function (req, res) {
+    const { user } = req;
+    const token = await getToken({ uid: user.id, rememberMe: true, type: 'student' });
+    let getExpToken = await getPayload(token.pure);
+
+    res.redirect(
+      url.format({
+        pathname: 'http://localhost:3006/google-auth',
+        query: {
+          key: token.key,
+          exp: getExpToken.exp,
+          id: user.id,
+          name: user.full_name,
+          email: user.email,
+          type: 'student',
+        },
+      })
+    );
   }
 );
 

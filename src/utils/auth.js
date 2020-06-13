@@ -1,8 +1,7 @@
-require('module-alias/register');
 const jwt = require('jsonwebtoken');
 const CryptoJS = require('crypto-js');
 const aes = require('crypto-js/aes');
-const config = require('@config');
+const config = require('../../config');
 
 const isAllow = async (req, res, next) => {
   let token = req.headers['x-token'];
