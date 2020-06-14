@@ -9,7 +9,7 @@ const {
   emails: { sendActivationEmail },
   response,
 } = require('../utils');
-const { students: Student, Teachers: Teacher } = require('../models');
+const { students: Student, teachers: Teacher, assets: Asset } = require('../models');
 
 const router = express.Router();
 
@@ -108,6 +108,7 @@ router.post(
           id: user.id,
           name: user.full_name,
           email: user.email,
+          avatar: null,
         },
         type,
       });
@@ -135,9 +136,31 @@ router.post(
     try {
       let user;
       if (type === 'student') {
-        user = await Student.findOne({ where: { email } });
+        user = await Student.findOne({
+          where: { email },
+          include: [
+            {
+              model: Asset,
+              where: {
+                type: 'avatar',
+              },
+              required: false,
+            },
+          ],
+        });
       } else if (type === 'teacher') {
-        user = await Teacher.findOne({ where: { email } });
+        user = await Teacher.findOne({
+          where: { email },
+          include: [
+            {
+              model: Asset,
+              where: {
+                type: 'avatar',
+              },
+              required: false,
+            },
+          ],
+        });
       }
 
       if (!user) {
@@ -156,13 +179,14 @@ router.post(
       await user.update({ last_login: Date.now() });
       const token = await getToken({ uid: user.id, rememberMe: remember_me, type });
       let getExpToken = await getPayload(token.pure);
-
+      console.log(user);
       const payload = Object.freeze({
         token: { key: token.key, exp: getExpToken.exp },
         user: {
           id: user.id,
           name: user.full_name,
           email: user.email,
+          avatar: user.assets.length ? user.assets[0].dataValues.url : null,
         },
         type,
       });
@@ -229,7 +253,6 @@ router.get(
     const { user } = req;
     const token = await getToken({ uid: user.id, rememberMe: true, type: 'student' });
     let getExpToken = await getPayload(token.pure);
-
     res.redirect(
       url.format({
         pathname: 'http://localhost:3006/google-auth',
@@ -238,6 +261,7 @@ router.get(
           exp: getExpToken.exp,
           id: user.id,
           name: user.full_name,
+          avatar: user.assets.length ? user.assets[0].dataValues.url : null,
           email: user.email,
           type: 'student',
         },

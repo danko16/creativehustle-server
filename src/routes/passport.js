@@ -1,6 +1,6 @@
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth').OAuth2Strategy;
-const { students: Student } = require('../models');
+const { students: Student, assets: Asset } = require('../models');
 const { encrypt } = require('../utils/token');
 
 const GOOGLE_CLIENT_ID = '446876581165-pbgrvmc4drv4jh81pp3dck34qgom2rac.apps.googleusercontent.com';
@@ -24,30 +24,57 @@ passport.use(
       callbackURL: 'http://localhost:3000/auth/google/callback',
     },
 
-    function (accessToken, refreshToken, profile, done) {
-      Student.findOne({ where: { email: profile._json.email } })
-        .then((student) => {
-          if (student) {
-            student.update({ last_login: Date.now(), is_active: true });
-            return done(null, student);
-          }
-          const password = generatePassword();
-          Student.create(
-            Object.freeze({
-              full_name: profile._json.name,
-              email: profile._json.email,
-              password: encrypt(password),
-              is_active: true,
-              last_login: Date.now(),
-              provider: 'google',
-            })
-          ).then((createUser) => {
-            return done(null, createUser);
-          });
-        })
-        .catch((err) => {
-          return done(err, null);
+    async function (accessToken, refreshToken, profile, done) {
+      try {
+        let student = await Student.findOne({
+          where: { email: profile._json.email },
+          include: [
+            {
+              model: Asset,
+              where: {
+                type: 'avatar',
+              },
+              required: false,
+            },
+          ],
         });
+
+        if (student) {
+          await student.update({
+            last_login: Date.now(),
+            is_active: true,
+          });
+        } else {
+          const password = generatePassword();
+          const createPayload = Object.freeze({
+            full_name: profile._json.name,
+            email: profile._json.email,
+            password: encrypt(password),
+            is_active: profile._json.email_verified,
+            last_login: Date.now(),
+            provider: 'google',
+          });
+
+          await Student.create(createPayload);
+
+          student = await Student.findOne({
+            where: { email: profile._json.email },
+            include: [
+              {
+                model: Asset,
+                where: {
+                  type: 'avatar',
+                },
+                required: false,
+              },
+            ],
+          });
+        }
+
+        return done(null, student);
+      } catch (err) {
+        return done(err, null);
+      }
     }
   )
 );

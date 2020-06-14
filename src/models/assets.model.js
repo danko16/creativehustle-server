@@ -8,6 +8,10 @@ module.exports = function (sequelize, DataTypes) {
         primaryKey: true,
         type: DataTypes.INTEGER,
       },
+      url: {
+        allowNull: false,
+        type: DataTypes.STRING,
+      },
       type: {
         allowNull: false,
         type: DataTypes.STRING,
