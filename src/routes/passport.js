@@ -44,6 +44,15 @@ passport.use(
             last_login: Date.now(),
             is_active: true,
           });
+
+          if (student.assets.length < 1) {
+            await Asset.create({
+              url: profile._json.picture,
+              type: 'avatar',
+              uploadable_type: 'students',
+              uploadable_id: student.id,
+            });
+          }
         } else {
           const password = generatePassword();
           const createPayload = Object.freeze({
@@ -55,21 +64,27 @@ passport.use(
             provider: 'google',
           });
 
-          await Student.create(createPayload);
-
-          student = await Student.findOne({
-            where: { email: profile._json.email },
-            include: [
-              {
-                model: Asset,
-                where: {
-                  type: 'avatar',
-                },
-                required: false,
-              },
-            ],
+          const createStudent = await Student.create(createPayload);
+          await Asset.create({
+            url: profile._json.picture,
+            type: 'avatar',
+            uploadable_type: 'students',
+            uploadable_id: createStudent.id,
           });
         }
+
+        student = await Student.findOne({
+          where: { email: profile._json.email },
+          include: [
+            {
+              model: Asset,
+              where: {
+                type: 'avatar',
+              },
+              required: false,
+            },
+          ],
+        });
 
         return done(null, student);
       } catch (err) {
