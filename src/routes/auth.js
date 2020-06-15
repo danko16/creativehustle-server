@@ -248,14 +248,14 @@ router.get(
 
 router.get(
   '/google/callback',
-  passport.authenticate('google', { failureRedirect: 'http://localhost:3006/login' }),
+  passport.authenticate('google', { failureRedirect: 'https://creativehustle.id' }),
   async function (req, res) {
     const { user } = req;
     const token = await getToken({ uid: user.id, rememberMe: true, type: 'student' });
     let getExpToken = await getPayload(token.pure);
     res.redirect(
       url.format({
-        pathname: 'http://localhost:3006/google-auth',
+        pathname: 'https://creativehustle.id/google-auth',
         query: {
           key: token.key,
           exp: getExpToken.exp,
