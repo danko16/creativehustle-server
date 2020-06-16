@@ -2,9 +2,10 @@ const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth').OAuth2Strategy;
 const { students: Student, assets: Asset } = require('../models');
 const { encrypt } = require('../utils/token');
+const config = require('../../config');
 
-const GOOGLE_CLIENT_ID = '446876581165-pbgrvmc4drv4jh81pp3dck34qgom2rac.apps.googleusercontent.com';
-const GOOGLE_CLIENT_SECRET = 'L8pHU_jxJfC1BIJeA-Xz8rI5';
+const GOOGLE_CLIENT_ID = config.googleId;
+const GOOGLE_CLIENT_SECRET = config.googleSecret;
 
 function generatePassword() {
   var length = 8,
@@ -21,7 +22,7 @@ passport.use(
     {
       clientID: GOOGLE_CLIENT_ID,
       clientSecret: GOOGLE_CLIENT_SECRET,
-      callbackURL: 'https://api.creativehustle.id/auth/google/callback',
+      callbackURL: `${config.serverDomain}/auth/google/callback`,
     },
 
     async function (accessToken, refreshToken, profile, done) {
