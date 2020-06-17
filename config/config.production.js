@@ -8,6 +8,8 @@ config.email = {
     pass: '',
   },
 };
+config.documents = 'public/documents';
+config.uploads = 'public/uploads';
 config.serverDomain = 'https://api.creativehustle.id';
 config.clientDomain = 'https://creativehustle.id';
 config.host = 'http://localhost';

@@ -91,7 +91,7 @@ router.post(
         return res.status(500).json(response(500, 'Internal Server Error!'));
       }
 
-      const tokenUrl = `${config.domain}/auth/confirm-email?token=${registerToken}&email=${user.email}&type=${type}`;
+      const tokenUrl = `${config.serverDomain}/auth/confirm-email?token=${registerToken}&email=${user.email}&type=${type}`;
 
       await sendActivationEmail({
         email: user.email,
@@ -99,7 +99,7 @@ router.post(
         tokenUrl,
       });
 
-      const token = await getToken({ uid: user.id, type: 'student' });
+      const token = await getToken({ uid: user.id, type });
       let getExpToken = await getPayload(token.pure);
 
       const payload = Object.freeze({
@@ -179,7 +179,7 @@ router.post(
       await user.update({ last_login: Date.now() });
       const token = await getToken({ uid: user.id, rememberMe: remember_me, type });
       let getExpToken = await getPayload(token.pure);
-      console.log(user);
+
       const payload = Object.freeze({
         token: { key: token.key, exp: getExpToken.exp },
         user: {

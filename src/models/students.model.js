@@ -76,6 +76,11 @@ module.exports = function (sequelize, DataTypes) {
       },
       onDelete: 'CASCADE',
     });
+
+    Students.hasMany(models.ratings, {
+      foreignKey: 'student_id',
+      onDelete: 'CASCADE',
+    });
   };
 
   return Students;

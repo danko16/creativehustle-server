@@ -6,8 +6,8 @@ config.email = {
     pass: '/sAMbv8v7j_+FpK',
   },
 };
-config.documents = process.env.DOCUMENT ? process.env.DOCUMENT : 'public/documents';
-config.uploads = process.env.UPLOAD ? process.env.UPLOAD : 'public/uploads';
+config.documents = 'public/documents';
+config.uploads = 'public/uploads';
 config.email_sender = '"http://localhost:3000" no-reply@localhost:3000';
 config.serverDomain = 'http://localhost:3000';
 config.clientDomain = 'http://localhost:3006';

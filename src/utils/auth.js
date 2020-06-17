@@ -1,25 +1,44 @@
 const jwt = require('jsonwebtoken');
 const CryptoJS = require('crypto-js');
 const aes = require('crypto-js/aes');
+const { teachers: Teacher, students: Student } = require('../models');
 const config = require('../../config');
 
 const isAllow = async (req, res, next) => {
   let token = req.headers['x-token'];
   if (!token) {
     return res.status(401).json({ status: 401, message: 'Sorry, Authentication required! :(' });
-  } else {
-    //check token
+  }
+  try {
     token = token.split(' ')[1];
     if (!token) return res.status(401).json({ status: 401, message: 'Invalid Token!' });
-
     let decrypted = aes.decrypt(token, config.aessecret);
-    await jwt.verify(decrypted.toString(CryptoJS.enc.Utf8), config.jwtsecret, function (
-      err,
-      decoded
-    ) {
-      if (err) return res.status(401).json({ status: 401, message: 'Invalid Jwt Token!' });
-      else next();
-    });
+
+    const decoded = await jwt.verify(decrypted.toString(CryptoJS.enc.Utf8), config.jwtsecret);
+
+    if (!decoded.type) {
+      return res.status(401).json({ status: 401, message: 'User Type not Present!' });
+    }
+
+    let user;
+
+    if (decoded.type === 'student') {
+      user = await Student.findOne({ where: { id: decoded.uid } });
+    } else if (decoded.type === 'teacher') {
+      user = await Teacher.findOne({ where: { id: decoded.uid } });
+    }
+
+    if (!user) {
+      return res.status(401).json({ status: 401, message: 'User not found!' });
+    }
+    res.locals.user = {
+      id: user.id,
+      type: decoded.type,
+      email: user.email,
+    };
+    next();
+  } catch (error) {
+    return res.status(401).json({ status: 401, message: 'Something Wrong!', error });
   }
 };
 

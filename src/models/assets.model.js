@@ -50,6 +50,11 @@ module.exports = function (sequelize, DataTypes) {
       foreignKey: 'uploadable_id',
       constraints: false,
     });
+
+    Assets.belongsTo(models.kursus, {
+      foreignKey: 'uploadable_id',
+      constraints: false,
+    });
   };
 
   return Assets;
