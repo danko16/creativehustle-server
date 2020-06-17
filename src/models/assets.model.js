@@ -8,6 +8,14 @@ module.exports = function (sequelize, DataTypes) {
         primaryKey: true,
         type: DataTypes.INTEGER,
       },
+      path: {
+        allowNull: true,
+        type: DataTypes.STRING,
+      },
+      filename: {
+        allowNull: true,
+        type: DataTypes.STRING,
+      },
       url: {
         allowNull: false,
         type: DataTypes.STRING,
