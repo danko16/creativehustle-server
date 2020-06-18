@@ -50,16 +50,16 @@ module.exports = function (sequelize, DataTypes) {
       foreignKey: 'teacher_id',
     });
 
-    Kursus.belongsToMany(models.students, {
-      through: 'kursus_saya',
-      foreignKey: 'kursus_id',
-    });
-
     Kursus.hasOne(models.assets, {
       foreignKey: 'uploadable_id',
       scope: {
         uploadable_type: 'kursus',
       },
+      onDelete: 'CASCADE',
+    });
+
+    Kursus.hasMany(models.kursus_saya, {
+      foreignKey: 'kursus_id',
       onDelete: 'CASCADE',
     });
 

@@ -302,38 +302,4 @@ router.get('/', [body('from', 'from must be present').exists()], async (req, res
   }
 });
 
-router.get('/detail/:kursus_id', isAllow, async (req, res) => {
-  const { kursus_id } = req.params;
-
-  try {
-    const kursus = await Kursus.findOne({
-      where: { id: kursus_id },
-      include: [
-        {
-          model: Section,
-          attributes: ['id', 'title'],
-          include: {
-            model: Content,
-            attributes: ['id', 'section_id', 'title', 'url'],
-          },
-        },
-        {
-          model: Asset,
-          attributes: ['url'],
-          where: {
-            type: 'thumbnail',
-          },
-        },
-      ],
-    });
-
-    if (!kursus) {
-      return res.status(400).json(response(400, 'kursus tidak ditemukan'));
-    }
-    return res.status(200).json(response(200, 'Berhasil mendapatkan detail kursus', kursus));
-  } catch (error) {
-    return res.status(500).json(response(500, 'Internal Server Error!', error));
-  }
-});
-
 module.exports = router;
