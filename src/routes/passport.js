@@ -1,6 +1,6 @@
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth').OAuth2Strategy;
-const { students: Student, assets: Asset } = require('../models');
+const { students: Student, digital_assets: Asset } = require('../models');
 const { encrypt } = require('../utils/token');
 const config = require('../../config');
 
@@ -32,6 +32,7 @@ passport.use(
           include: [
             {
               model: Asset,
+              as: 'student_assets',
               where: {
                 type: 'avatar',
               },
@@ -46,13 +47,16 @@ passport.use(
             is_active: true,
           });
 
-          if (student.assets.length < 1) {
-            await Asset.create({
-              url: profile._json.picture,
-              type: 'avatar',
-              uploadable_type: 'students',
-              uploadable_id: student.id,
-            });
+          if (student.student_assets.length < 1) {
+            await Student.create(
+              {
+                student_assets: {
+                  url: profile._json.picture,
+                  type: 'avatar',
+                },
+              },
+              { include: { model: Asset, as: 'student_assets' } }
+            );
           }
         } else {
           const password = generatePassword();
@@ -63,15 +67,13 @@ passport.use(
             is_active: profile._json.email_verified,
             last_login: Date.now(),
             provider: 'google',
+            student_assets: {
+              url: profile._json.picture,
+              type: 'avatar',
+            },
           });
 
-          const createStudent = await Student.create(createPayload);
-          await Asset.create({
-            url: profile._json.picture,
-            type: 'avatar',
-            uploadable_type: 'students',
-            uploadable_id: createStudent.id,
-          });
+          await Student.create(createPayload, { include: { model: Asset, as: 'student_assets' } });
         }
 
         student = await Student.findOne({
@@ -79,6 +81,7 @@ passport.use(
           include: [
             {
               model: Asset,
+              as: 'student_assets',
               where: {
                 type: 'avatar',
               },

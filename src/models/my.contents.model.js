@@ -1,6 +1,6 @@
 module.exports = function (sequelize, DataTypes) {
-  const Contents = sequelize.define(
-    'contents',
+  const MyContents = sequelize.define(
+    'my_contents',
     {
       id: {
         allowNull: false,
@@ -8,22 +8,27 @@ module.exports = function (sequelize, DataTypes) {
         autoIncrement: true,
         type: DataTypes.INTEGER,
       },
-      section_id: {
+      my_course_id: {
         allowNull: false,
         foreignKey: true,
         type: DataTypes.INTEGER,
         references: {
-          model: 'sections',
+          model: 'my_courses',
           key: 'id',
         },
       },
-      title: {
+      content_id: {
         allowNull: false,
-        type: DataTypes.STRING,
+        foreignKey: true,
+        type: DataTypes.INTEGER,
+        references: {
+          model: 'contents',
+          key: 'id',
+        },
       },
-      url: {
+      done: {
         allowNull: false,
-        type: DataTypes.STRING,
+        type: DataTypes.BOOLEAN,
       },
       createdAt: {
         allowNull: false,
@@ -34,18 +39,21 @@ module.exports = function (sequelize, DataTypes) {
         type: DataTypes.DATE,
       },
     },
-    { timestamps: true, underscored: true }
+    {
+      timestamps: true,
+      underscored: true,
+    }
   );
 
-  Contents.assoctiate = function (models) {
-    Contents.belongsTo(models.sections, {
-      foreignKey: 'section_id',
+  MyContents.associate = function (models) {
+    MyContents.belongsTo(models.my_courses, {
+      foreignKey: 'my_course_id',
     });
 
-    Contents.hasMany(models.content_saya, {
+    MyContents.belongsTo(models.contents, {
       foreignKey: 'content_id',
-      onDelete: 'CASCADE',
     });
   };
-  return Contents;
+
+  return MyContents;
 };

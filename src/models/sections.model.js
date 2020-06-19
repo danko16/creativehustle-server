@@ -1,6 +1,6 @@
 module.exports = function (sequelize, DataTypes) {
-  const Ratings = sequelize.define(
-    'ratings',
+  const Sections = sequelize.define(
+    'sections',
     {
       id: {
         allowNull: false,
@@ -8,32 +8,18 @@ module.exports = function (sequelize, DataTypes) {
         primaryKey: true,
         type: DataTypes.INTEGER,
       },
-      kursus_id: {
+      course_id: {
         allowNull: false,
-        foreignKey: true,
         type: DataTypes.INTEGER,
+        foreignKey: true,
         references: {
-          model: 'kursus',
+          model: 'courses',
           key: 'id',
         },
       },
-      student_id: {
-        allowNull: false,
-        foreignKey: true,
-        type: DataTypes.INTEGER,
-        references: {
-          model: 'students',
-          key: 'id',
-        },
-      },
-      message: {
+      title: {
         allowNull: false,
         type: DataTypes.STRING,
-      },
-      rating: {
-        allowNull: false,
-        type: DataTypes.FLOAT,
-        max: 5.0,
       },
       createdAt: {
         allowNull: false,
@@ -50,15 +36,16 @@ module.exports = function (sequelize, DataTypes) {
     }
   );
 
-  Ratings.associate = function (models) {
-    Ratings.belongsTo(models.kursus, {
-      foreignKey: 'kursus_id',
+  Sections.associate = function (models) {
+    Sections.belongsTo(models.courses, {
+      foreignKey: 'course_id',
     });
 
-    Ratings.belongsTo(models.students, {
-      foreignKey: 'student_id',
+    Sections.hasMany(models.contents, {
+      foreignKey: 'section_id',
+      onDelete: 'CASCADE',
     });
   };
 
-  return Ratings;
+  return Sections;
 };

@@ -1,6 +1,6 @@
 module.exports = function (sequelize, DataTypes) {
-  const Kursus = sequelize.define(
-    'kursus',
+  const Courses = sequelize.define(
+    'courses',
     {
       id: {
         allowNull: false,
@@ -45,39 +45,35 @@ module.exports = function (sequelize, DataTypes) {
   );
 
   // eslint-disable-next-line no-unused-vars
-  Kursus.associate = function (models) {
-    Kursus.belongsTo(models.teachers, {
+  Courses.associate = function (models) {
+    Courses.belongsTo(models.teachers, {
       foreignKey: 'teacher_id',
     });
 
-    Kursus.hasOne(models.assets, {
-      foreignKey: 'uploadable_id',
-      scope: {
-        uploadable_type: 'kursus',
-      },
+    Courses.hasOne(models.digital_assets, {
+      as: 'course_assets',
+    });
+
+    Courses.hasMany(models.my_courses, {
+      foreignKey: 'course_id',
       onDelete: 'CASCADE',
     });
 
-    Kursus.hasMany(models.kursus_saya, {
-      foreignKey: 'kursus_id',
+    Courses.hasMany(models.ratings, {
+      foreignKey: 'course_id',
       onDelete: 'CASCADE',
     });
 
-    Kursus.hasMany(models.ratings, {
-      foreignKey: 'kursus_id',
+    Courses.hasMany(models.sections, {
+      foreignKey: 'course_id',
       onDelete: 'CASCADE',
     });
 
-    Kursus.hasMany(models.sections, {
-      foreignKey: 'kursus_id',
-      onDelete: 'CASCADE',
-    });
-
-    Kursus.hasMany(models.preview_sections, {
-      foreignKey: 'kursus_id',
+    Courses.hasMany(models.preview_sections, {
+      foreignKey: 'course_id',
       onDelete: 'CASCADE',
     });
   };
 
-  return Kursus;
+  return Courses;
 };

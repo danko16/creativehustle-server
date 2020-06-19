@@ -1,19 +1,19 @@
 module.exports = function (sequelize, DataTypes) {
-  const KursusSaya = sequelize.define(
-    'kursus_saya',
+  const Ratings = sequelize.define(
+    'ratings',
     {
       id: {
         allowNull: false,
-        primaryKey: true,
         autoIncrement: true,
+        primaryKey: true,
         type: DataTypes.INTEGER,
       },
-      kursus_id: {
+      course_id: {
         allowNull: false,
         foreignKey: true,
         type: DataTypes.INTEGER,
         references: {
-          model: 'kursus',
+          model: 'courses',
           key: 'id',
         },
       },
@@ -25,6 +25,15 @@ module.exports = function (sequelize, DataTypes) {
           model: 'students',
           key: 'id',
         },
+      },
+      message: {
+        allowNull: false,
+        type: DataTypes.STRING,
+      },
+      rating: {
+        allowNull: false,
+        type: DataTypes.FLOAT,
+        max: 5.0,
       },
       createdAt: {
         allowNull: false,
@@ -38,25 +47,18 @@ module.exports = function (sequelize, DataTypes) {
     {
       timestamps: true,
       underscored: true,
-      freezeTableName: true,
-      tableName: 'kursus_saya',
     }
   );
 
-  KursusSaya.associate = function (models) {
-    KursusSaya.belongsTo(models.students, {
+  Ratings.associate = function (models) {
+    Ratings.belongsTo(models.courses, {
+      foreignKey: 'course_id',
+    });
+
+    Ratings.belongsTo(models.students, {
       foreignKey: 'student_id',
-    });
-
-    KursusSaya.belongsTo(models.kursus, {
-      foreignKey: 'kursus_id',
-    });
-
-    KursusSaya.hasMany(models.content_saya, {
-      foreignKey: 'kursus_saya_id',
-      onDelete: 'CASCADE',
     });
   };
 
-  return KursusSaya;
+  return Ratings;
 };

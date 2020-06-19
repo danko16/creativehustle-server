@@ -8,12 +8,12 @@ module.exports = function (sequelize, DataTypes) {
         primaryKey: true,
         type: DataTypes.INTEGER,
       },
-      kursus_id: {
+      course_id: {
         allowNull: false,
         type: DataTypes.INTEGER,
         foreignKey: true,
         references: {
-          model: 'kursus',
+          model: 'courses',
           key: 'id',
         },
       },
@@ -37,8 +37,8 @@ module.exports = function (sequelize, DataTypes) {
   );
 
   previewSections.associate = function (models) {
-    previewSections.belongsTo(models.kursus, {
-      foreignKey: 'kursus_id',
+    previewSections.belongsTo(models.courses, {
+      foreignKey: 'course_id',
     });
 
     previewSections.hasMany(models.preview_contents, {

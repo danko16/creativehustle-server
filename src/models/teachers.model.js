@@ -65,15 +65,11 @@ module.exports = function (sequelize, DataTypes) {
 
   // eslint-disable-next-line no-unused-vars
   Teachers.associate = function (models) {
-    Teachers.hasMany(models.assets, {
-      foreignKey: 'uploadable_id',
-      scope: {
-        uploadable_type: 'teachers',
-      },
-      onDelete: 'CASCADE',
+    Teachers.hasMany(models.digital_assets, {
+      as: 'teacher_assets',
     });
 
-    Teachers.hasMany(models.kursus, {
+    Teachers.hasMany(models.courses, {
       foreignKey: 'teacher_id',
       onDelete: 'CASCADE',
     });

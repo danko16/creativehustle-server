@@ -9,7 +9,7 @@ const {
   emails: { sendActivationEmail },
   response,
 } = require('../utils');
-const { students: Student, teachers: Teacher, assets: Asset } = require('../models');
+const { students: Student, teachers: Teacher, digital_assets: Asset } = require('../models');
 
 const router = express.Router();
 
@@ -141,6 +141,7 @@ router.post(
           include: [
             {
               model: Asset,
+              as: 'student_assets',
               where: {
                 type: 'avatar',
               },
@@ -154,6 +155,7 @@ router.post(
           include: [
             {
               model: Asset,
+              as: 'teacher_assets',
               where: {
                 type: 'avatar',
               },
@@ -165,6 +167,12 @@ router.post(
 
       if (!user) {
         return res.status(400).json(response(400, 'User not found!'));
+      }
+      let avatar;
+      if (type === 'student') {
+        avatar = user.student_assets.length ? user.student_assets[0].dataValues.url : null;
+      } else if (type === 'teacher') {
+        avatar = user.teacher_assets.length ? user.teacher_assets[0].dataValues.url : null;
       }
 
       if (user.provider === 'google') {
@@ -186,13 +194,14 @@ router.post(
           id: user.id,
           name: user.full_name,
           email: user.email,
-          avatar: user.assets.length ? user.assets[0].dataValues.url : null,
+          avatar,
         },
         type,
       });
 
       return res.status(200).json(response(200, 'Login berhasil', payload));
     } catch (error) {
+      console.log(error);
       return res.status(500).json(response(500, 'Internal Server Error!', error));
     }
   }
@@ -261,7 +270,7 @@ router.get(
           exp: getExpToken.exp,
           id: user.id,
           name: user.full_name,
-          avatar: user.assets.length ? user.assets[0].dataValues.url : null,
+          avatar: user.student_assets.length ? user.student_assets[0].dataValues.url : null,
           email: user.email,
           type: 'student',
         },

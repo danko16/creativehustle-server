@@ -1,6 +1,6 @@
 module.exports = function (sequelize, DataTypes) {
-  const Assets = sequelize.define(
-    'assets',
+  const DigitalAssets = sequelize.define(
+    'digital_assets',
     {
       id: {
         allowNull: false,
@@ -24,14 +24,6 @@ module.exports = function (sequelize, DataTypes) {
         allowNull: false,
         type: DataTypes.STRING,
       },
-      uploadable_id: {
-        allowNull: false,
-        type: DataTypes.INTEGER,
-      },
-      uploadable_type: {
-        allowNull: false,
-        type: DataTypes.STRING,
-      },
       createdAt: {
         allowNull: false,
         type: DataTypes.DATE,
@@ -47,23 +39,19 @@ module.exports = function (sequelize, DataTypes) {
     }
   );
 
-  // eslint-disable-next-line no-unused-vars
-  Assets.associate = function (models) {
-    Assets.belongsTo(models.students, {
-      foreignKey: 'uploadable_id',
-      constraints: false,
+  DigitalAssets.associate = function (models) {
+    DigitalAssets.belongsTo(models.students, {
+      as: 'student_assets',
     });
 
-    Assets.belongsTo(models.teachers, {
-      foreignKey: 'uploadable_id',
-      constraints: false,
+    DigitalAssets.belongsTo(models.teachers, {
+      as: 'teacher_assets',
     });
 
-    Assets.belongsTo(models.kursus, {
-      foreignKey: 'uploadable_id',
-      constraints: false,
+    DigitalAssets.belongsTo(models.courses, {
+      as: 'course_assets',
     });
   };
 
-  return Assets;
+  return DigitalAssets;
 };

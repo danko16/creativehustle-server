@@ -3,8 +3,8 @@ const multer = require('multer');
 const { query, body, validationResult } = require('express-validator');
 const {
   Sequelize,
-  kursus: Kursus,
-  assets: Asset,
+  courses: Course,
+  digital_assets: Asset,
   sections: Section,
   contents: Content,
   preview_sections: PreviewSection,
@@ -70,21 +70,21 @@ router.post(
         const filePath = `${file.destination}/${file.filename}`;
         const urlPath = `${config.serverDomain}/${servePath}`;
 
-        const kursus = await Kursus.create({
-          teacher_id: user.id,
-          title,
-          price,
-          promo_price,
-        });
-
-        await Asset.create({
-          url: urlPath,
-          path: filePath,
-          filename: file.filename,
-          type: 'thumbnail',
-          uploadable_type: 'kursus',
-          uploadable_id: kursus.id,
-        });
+        const kursus = await Course.create(
+          {
+            teacher_id: user.id,
+            title,
+            price,
+            promo_price,
+            course_assets: {
+              url: urlPath,
+              path: filePath,
+              filename: file.filename,
+              type: 'thumbnail',
+            },
+          },
+          { include: { model: Asset, as: 'course_assets' } }
+        );
 
         const payload = Object.freeze({
           kursus_id: kursus.id,
@@ -130,15 +130,19 @@ router.post(
         return res.status(400).json(response(400, 'Request sections kosong'));
       }
 
-      let kursus = await Kursus.findOne({ where: { id: kursus_id } });
+      let kursus = await Course.findOne({ where: { id: kursus_id }, include: { model: Section } });
 
       if (!kursus) {
         return res.status(400).json(response(400, 'kursus tidak ditemukan'));
       }
 
+      if (kursus.sections.length) {
+        return res.status(400).json(response(400, 'Silahkan update kursus'));
+      }
+
       for (let i = 0; i < sections.length; i++) {
         const section = await Section.create({
-          kursus_id: kursus.id,
+          course_id: kursus.id,
           title: sections[i].title,
         });
 
@@ -153,7 +157,7 @@ router.post(
         }
       }
 
-      kursus = await Kursus.findOne({
+      kursus = await Course.findOne({
         where: { id: kursus_id },
         include: [
           {
@@ -166,6 +170,7 @@ router.post(
           },
           {
             model: Asset,
+            as: 'course_assets',
             attributes: ['url'],
             where: {
               type: 'thumbnail',
@@ -178,6 +183,7 @@ router.post(
         .status(200)
         .json(response(200, 'Berhasil menambahkan section dan content', kursus));
     } catch (error) {
+      console.log(error);
       return res.status(500).json(response(500, 'Internal Server Error!', error));
     }
   }
@@ -211,15 +217,22 @@ router.post(
         return res.status(400).json(response(400, 'Request preview sections kosong'));
       }
 
-      let kursus = await Kursus.findOne({ where: { id: kursus_id } });
+      let kursus = await Course.findOne({
+        where: { id: kursus_id },
+        include: { model: PreviewSection },
+      });
 
       if (!kursus) {
         return res.status(400).json(response(400, 'kursus tidak ditemukan'));
       }
 
+      if (kursus.preview_sections.length) {
+        return res.status(400).json(response(400, 'Silahkan update kursus'));
+      }
+
       for (let i = 0; i < preview_sections.length; i++) {
         const previewSection = await PreviewSection.create({
-          kursus_id: kursus.id,
+          course_id: kursus.id,
           title: preview_sections[i].title,
         });
 
@@ -234,7 +247,7 @@ router.post(
         }
       }
 
-      kursus = await Kursus.findOne({
+      kursus = await Course.findOne({
         where: { id: kursus_id },
         include: [
           {
@@ -247,6 +260,7 @@ router.post(
           },
           {
             model: Asset,
+            as: 'course_assets',
             attributes: ['url'],
             where: {
               type: 'thumbnail',
@@ -271,7 +285,7 @@ router.get('/', [body('from', 'from must be present').exists()], async (req, res
   }
   const { from } = req.body;
   try {
-    const kursus = await Kursus.findAll({
+    const kursus = await Course.findAll({
       where: {
         id: { [Op.gt]: from },
       },
@@ -289,6 +303,7 @@ router.get('/', [body('from', 'from must be present').exists()], async (req, res
         },
         {
           model: Asset,
+          as: 'course_assets',
           attributes: ['url'],
           where: {
             type: 'thumbnail',
