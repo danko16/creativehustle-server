@@ -8,6 +8,7 @@ const {
   teachers: Teacher,
   my_courses: MyCourse,
   my_contents: MyContent,
+  digital_assets: Asset,
 } = require('../models');
 const {
   auth: { isAllow },
@@ -35,77 +36,84 @@ router.get('/', isAllow, async (req, res) => {
             {
               model: Section,
               attributes: { exclude: ['createdAt', 'updatedAt'] },
-              include: {
-                attributes: { exclude: ['createdAt', 'updatedAt'] },
-                model: Content,
-              },
             },
             {
               model: Teacher,
               attributes: ['full_name'],
+            },
+            {
+              model: Asset,
+              attributes: ['url'],
+              as: 'course_assets',
             },
           ],
         },
         {
           model: MyContent,
           attributes: ['id', 'content_id', 'done'],
+          include: {
+            attributes: { exclude: ['createdAt', 'updatedAt'] },
+            model: Content,
+          },
         },
       ],
     });
 
-    const kursus = [];
+    const kursusPayload = [];
+    const sectionsPayload = [];
+    const contentsPayload = [];
     for (let i = 0; i < kursusSaya.length; i++) {
-      const contents = kursusSaya[i].get('my_contents', { plain: true });
-      let done = 0;
-      let total = contents.length;
-      for (let j = 0; j < contents.length; j++) {
-        if (contents[j].done) {
-          done++;
+      const myCourse = kursusSaya[i].get('course', { plain: true });
+      const myContent = kursusSaya[i].get('my_contents', { plain: true });
+
+      let doneTotal = 0;
+      let total = myContent.length;
+
+      for (let j = 0; j < myContent.length; j++) {
+        const { id, done, content_id, content } = myContent[j];
+
+        const [section] = myCourse.sections.filter((val) => val.id === content.section_id);
+
+        contentsPayload.push({
+          id: id,
+          course_id: myCourse.id,
+          section_id: content.section_id,
+          content_id,
+          done,
+          section_title: section.title,
+          title: content.title,
+          url: content.url,
+        });
+
+        if (done) {
+          doneTotal++;
         }
       }
 
-      const progress = Math.floor((done / total) * 100);
-      kursus.push({
-        ...kursusSaya[i].get('course', { plain: true }),
+      const progress = Math.floor((doneTotal / total) * 100);
+
+      const course = Object.freeze({
+        id: myCourse.id,
+        teacher_id: myCourse.teacher_id,
+        title: myCourse.title,
+        price: myCourse.price,
+        promo_price: myCourse.promo_price,
+        teacher_name: myCourse.teacher.full_name,
+        thumbnail: myCourse.course_assets.url,
         progress,
       });
+
+      kursusPayload.push(course);
+      sectionsPayload.push(...myCourse.sections);
     }
 
-    return res.status(200).json(response(200, 'Berhasil Mendapatkan Kursus', kursus));
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json(response(500, 'Internal Server Error!', error));
-  }
-});
-
-router.get('/progress', isAllow, async (req, res) => {
-  const { user } = res.locals;
-
-  if (user.type !== 'student') {
-    return res.status(400).json(response(400, 'Anda tidak terdaftar sebagai siswa'));
-  }
-  try {
-    const kursusSaya = await MyCourse.findAll({
-      where: {
-        student_id: user.id,
-      },
-      include: {
-        model: MyContent,
-        attributes: ['id', 'content_id', 'done'],
-      },
-    });
-
-    const payload = [];
-    for (let i = 0; i < kursusSaya.length; i++) {
-      const contents = kursusSaya[i].get('my_contents', { plain: true });
-
-      payload.push({
-        kursus_id: kursusSaya[i].course_id,
-        contents,
-      });
-    }
-
-    return res.status(200).json(response(200, 'Berhasil Mendapatkan Progress Kursus', payload));
+    return res.status(200).json(
+      response(200, 'Berhasil Mendapatkan Kursus', {
+        courses: kursusPayload,
+        sections: sectionsPayload,
+        contents: contentsPayload,
+      })
+    );
   } catch (error) {
     console.log(error);
     return res.status(500).json(response(500, 'Internal Server Error!', error));
@@ -193,6 +201,40 @@ router.post(
       return res.status(200).json(response(200, 'Berhasil Subscribe kursus'));
     } catch (error) {
       await transaction.rollback();
+      return res.status(500).json(response(500, 'Internal Server Error!', error));
+    }
+  }
+);
+
+router.patch(
+  '/done',
+  isAllow,
+  [body('my_content_id', 'my content id should present').exists()],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json(response(422, errors.array()));
+    }
+
+    const { user } = res.locals;
+    const { my_content_id } = req.body;
+
+    if (user.type !== 'student') {
+      return res.status(400).json(response(400, 'Anda tidak terdaftar sebagai siswa'));
+    }
+    try {
+      let myContent = await MyContent.findOne({ where: { id: my_content_id } });
+
+      if (!myContent) {
+        return res.status(400).json(response(400, 'konten saya tidak di temukan!'));
+      }
+
+      await myContent.update({
+        done: true,
+      });
+
+      return res.status(200).json(response(200, 'Status berhasil di ubah'));
+    } catch (error) {
       return res.status(500).json(response(500, 'Internal Server Error!', error));
     }
   }
