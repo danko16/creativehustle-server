@@ -8,6 +8,15 @@ module.exports = function (sequelize, DataTypes) {
         autoIncrement: true,
         type: DataTypes.INTEGER,
       },
+      course_id: {
+        allowNull: false,
+        foreignKey: true,
+        type: DataTypes.INTEGER,
+        references: {
+          model: 'courses',
+          key: 'id',
+        },
+      },
       preview_sections_id: {
         allowNull: false,
         foreignKey: true,
@@ -38,6 +47,9 @@ module.exports = function (sequelize, DataTypes) {
   );
 
   previewContents.assoctiate = function (models) {
+    previewContents.belongsTo(models.courses, {
+      foreignKey: 'course_id',
+    });
     previewContents.belongsTo(models.preview_sections, {
       foreignKey: 'preview_sections_id',
     });

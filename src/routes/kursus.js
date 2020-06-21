@@ -7,6 +7,7 @@ const {
   digital_assets: Asset,
   sections: Section,
   contents: Content,
+  teachers: Teacher,
   preview_sections: PreviewSection,
   preview_contents: PreviewContent,
 } = require('../models');
@@ -240,6 +241,7 @@ router.post(
 
         for (let j = 0; j < contents.length; j++) {
           await PreviewContent.create({
+            course_id: kursus.id,
             preview_sections_id: previewSection.id,
             title: contents[j].title,
             url: contents[j].url,
@@ -278,28 +280,24 @@ router.post(
   }
 );
 
-router.get('/', [body('from', 'from must be present').exists()], async (req, res) => {
+router.get('/', [query('from', 'from must be present').exists()], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(422).json(response(422, errors.array()));
   }
-  const { from } = req.body;
+  const { from } = req.query;
   try {
     const kursus = await Course.findAll({
       where: {
         id: { [Op.gt]: from },
       },
+      attributes: { exclude: ['createdAt', 'updatedAt'] },
       limit: 9,
       include: [
         {
           model: PreviewSection,
-          attributes: ['id', 'title'],
+          attributes: { exclude: ['createdAt', 'updatedAt'] },
           required: true,
-          include: {
-            model: PreviewContent,
-            required: true,
-            attributes: ['id', 'preview_sections_id', 'title', 'url'],
-          },
         },
         {
           model: Asset,
@@ -309,9 +307,44 @@ router.get('/', [body('from', 'from must be present').exists()], async (req, res
             type: 'thumbnail',
           },
         },
+        {
+          model: Teacher,
+          attributes: ['full_name'],
+        },
+        {
+          model: PreviewContent,
+          required: true,
+          attributes: { exclude: ['createdAt', 'updatedAt'] },
+        },
       ],
     });
-    return res.status(200).json(response(200, 'Berhasil mendapatkan kursus', kursus));
+
+    const kursusPayload = [];
+    const sectionsPayload = [];
+    const contentsPayload = [];
+    for (let i = 0; i < kursus.length; i++) {
+      const { preview_sections, course_assets, preview_contents, teacher } = kursus[i];
+      const course = Object.freeze({
+        id: kursus[i].id,
+        teacher_id: kursus[i].teacher_id,
+        title: kursus[i].title,
+        price: kursus[i].price,
+        promo_price: kursus[i].promo_price,
+        teacher_name: teacher.full_name,
+        thumbnail: course_assets.url,
+      });
+
+      kursusPayload.push(course);
+      sectionsPayload.push(...preview_sections);
+      contentsPayload.push(...preview_contents);
+    }
+    return res.status(200).json(
+      response(200, 'Berhasil mendapatkan kursus', {
+        courses: kursusPayload,
+        sections: sectionsPayload,
+        contents: contentsPayload,
+      })
+    );
   } catch (error) {
     return res.status(500).json(response(500, 'Internal Server Error!', error));
   }
