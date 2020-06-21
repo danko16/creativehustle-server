@@ -46,18 +46,6 @@ passport.use(
             last_login: Date.now(),
             is_active: true,
           });
-
-          if (student.student_assets.length < 1) {
-            await Student.create(
-              {
-                student_assets: {
-                  url: profile._json.picture,
-                  type: 'avatar',
-                },
-              },
-              { include: { model: Asset, as: 'student_assets' } }
-            );
-          }
         } else {
           const password = generatePassword();
           const createPayload = Object.freeze({
