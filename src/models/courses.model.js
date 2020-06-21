@@ -54,6 +54,11 @@ module.exports = function (sequelize, DataTypes) {
       as: 'course_assets',
     });
 
+    Courses.hasOne(models.course_recommendations, {
+      foreignKey: 'course_id',
+      onDelete: 'CASCADE',
+    });
+
     Courses.hasMany(models.my_courses, {
       foreignKey: 'course_id',
       onDelete: 'CASCADE',

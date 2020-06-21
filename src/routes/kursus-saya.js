@@ -9,6 +9,7 @@ const {
   my_courses: MyCourse,
   my_contents: MyContent,
   digital_assets: Asset,
+  course_recommendations: CourseRecommendation,
 } = require('../models');
 const {
   auth: { isAllow },
@@ -239,5 +240,53 @@ router.patch(
     }
   }
 );
+
+router.get('/rekomendasi', isAllow, async (req, res) => {
+  const { user } = res.locals;
+
+  if (user.type !== 'student') {
+    return res.status(400).json(response(400, 'Anda tidak terdaftar sebagai siswa'));
+  }
+
+  try {
+    const recommendations = await CourseRecommendation.findAll({
+      attributes: { exclude: ['createdAt', 'updatedAt'] },
+      limit: 2,
+      include: {
+        model: Course,
+        attributes: { exclude: ['createdAt', 'updatedAt'] },
+        include: [
+          {
+            model: Teacher,
+            attributes: ['full_name'],
+          },
+          {
+            model: Asset,
+            as: 'course_assets',
+            attributes: ['url'],
+          },
+        ],
+      },
+    });
+
+    const payload = [];
+    for (let i = 0; i < recommendations.length; i++) {
+      const { id, course_id, course } = recommendations[i];
+      payload.push({
+        id,
+        course_id,
+        teacher_id: course.teacher_id,
+        title: course.title,
+        price: course.price,
+        promo_price: course.promo_price,
+        teacher_name: course.teacher.full_name,
+        thumbnail: course.course_assets.url,
+      });
+    }
+    return res.status(200).json(response(200, 'berhasil mendapatkan rekomendasi', payload));
+  } catch (error) {
+    return res.status(500).json(response(500, 'Internal Server Error!', error));
+  }
+});
 
 module.exports = router;
