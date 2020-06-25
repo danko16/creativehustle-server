@@ -1,6 +1,6 @@
 const express = require('express');
 const multer = require('multer');
-const { query, body, validationResult } = require('express-validator');
+const { query, body, param, validationResult } = require('express-validator');
 const {
   Sequelize,
   courses: Course,
@@ -215,11 +215,6 @@ router.get('/', [query('from', 'from must be present').exists()], async (req, re
       limit: 9,
       include: [
         {
-          model: Section,
-          attributes: { exclude: ['createdAt', 'updatedAt'] },
-          required: true,
-        },
-        {
           model: Asset,
           as: 'course_assets',
           attributes: ['url'],
@@ -231,17 +226,10 @@ router.get('/', [query('from', 'from must be present').exists()], async (req, re
           model: Teacher,
           attributes: ['full_name'],
         },
-        {
-          model: Content,
-          required: true,
-          attributes: { exclude: ['createdAt', 'updatedAt'] },
-        },
       ],
     }).map((el) => el.get({ plain: true }));
 
     const courses = [];
-    const sections = [];
-    const contents = [];
     for (let i = 0; i < kursus.length; i++) {
       courses.push({
         id: kursus[i].id,
@@ -254,21 +242,58 @@ router.get('/', [query('from', 'from must be present').exists()], async (req, re
         teacher_name: kursus[i].teacher.full_name,
         thumbnail: kursus[i].course_assets.url,
       });
-
-      sections.push(...kursus[i].sections);
-      contents.push(...kursus[i].contents);
     }
 
-    return res.status(200).json(
-      response(200, 'Berhasil mendapatkan kursus', {
-        courses,
-        sections,
-        contents,
-      })
-    );
+    return res.status(200).json(response(200, 'Berhasil mendapatkan kursus', courses));
   } catch (error) {
     return res.status(500).json(response(500, 'Internal Server Error!', error));
   }
 });
+
+router.get(
+  '/:course_id/contents',
+  [param('course_id', 'course id should be present').exists()],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json(response(422, errors.array()));
+    }
+
+    const { course_id } = req.params;
+
+    try {
+      const course = await Course.findOne({
+        where: { id: course_id },
+        attributes: ['id'],
+        include: [
+          {
+            model: Section,
+            attributes: { exclude: ['createdAt', 'updatedAt'] },
+          },
+          {
+            model: Content,
+            attributes: { exclude: ['createdAt', 'updatedAt'] },
+          },
+        ],
+      });
+
+      if (!course) {
+        return res.status(400).json(response(400, 'Kursus tidak ditemukan!'));
+      }
+
+      const sections = course.get('sections', { plain: true });
+      const contents = course.get('contents', { plain: true });
+
+      return res.status(200).json(
+        response(200, 'Berhasil mendapatkan Contents', {
+          sections,
+          contents,
+        })
+      );
+    } catch (error) {
+      return res.status(500).json(response(500, 'Internal Server Error!', error));
+    }
+  }
+);
 
 module.exports = router;

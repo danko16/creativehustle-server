@@ -1,5 +1,5 @@
 const express = require('express');
-const { body, validationResult } = require('express-validator');
+const { body, param, validationResult } = require('express-validator');
 const {
   courses: Course,
   sections: Section,
@@ -33,10 +33,6 @@ router.get('/', isAllow, async (req, res) => {
           attributes: { exclude: ['createdAt', 'updatedAt'] },
           include: [
             {
-              model: Section,
-              attributes: { exclude: ['createdAt', 'updatedAt'] },
-            },
-            {
               model: Teacher,
               attributes: ['full_name'],
             },
@@ -51,8 +47,6 @@ router.get('/', isAllow, async (req, res) => {
     });
 
     const kursusPayload = [];
-    const sectionsPayload = [];
-    const contentsPayload = [];
     for (let i = 0; i < kursusSaya.length; i++) {
       const myCourse = kursusSaya[i].get('course', { plain: true });
       const myContent = JSON.parse(kursusSaya[i].contents);
@@ -60,17 +54,7 @@ router.get('/', isAllow, async (req, res) => {
       let total = myContent.length;
 
       for (let j = 0; j < myContent.length; j++) {
-        const { id, done, course_id, section_id, is_preview, title, url } = myContent[j];
-
-        contentsPayload.push({
-          id,
-          course_id: course_id,
-          section_id: section_id,
-          done,
-          is_preview,
-          title: title,
-          url: url,
-        });
+        const { done } = myContent[j];
 
         if (done) {
           doneTotal++;
@@ -87,24 +71,66 @@ router.get('/', isAllow, async (req, res) => {
         promo_price: myCourse.promo_price,
         teacher_name: myCourse.teacher.full_name,
         thumbnail: myCourse.course_assets.url,
+        first_content: myContent[0].id,
         progress,
       });
 
       kursusPayload.push(course);
-      sectionsPayload.push(...myCourse.sections);
     }
 
-    return res.status(200).json(
-      response(200, 'Berhasil Mendapatkan Kursus', {
-        courses: kursusPayload,
-        sections: sectionsPayload,
-        contents: contentsPayload,
-      })
-    );
+    return res.status(200).json(response(200, 'Berhasil Mendapatkan Kursus', kursusPayload));
   } catch (error) {
     return res.status(500).json(response(500, 'Internal Server Error!', error));
   }
 });
+
+router.get(
+  '/:course_id/contents',
+  isAllow,
+  [param('course_id', 'course id should be present').exists()],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json(response(422, errors.array()));
+    }
+
+    const { user } = res.locals;
+    const { course_id } = req.params;
+
+    if (user.type !== 'student') {
+      return res.status(400).json(response(400, 'Anda tidak terdaftar sebagai siswa'));
+    }
+
+    try {
+      let myCourse = await MyCourse.findOne({
+        where: { course_id, student_id: user.id },
+        include: {
+          model: Course,
+          include: {
+            model: Section,
+            attributes: { exclude: ['createdAt', 'updatedAt'] },
+          },
+        },
+      });
+
+      if (!myCourse) {
+        return res.status(400).json(response(400, 'anda tidak terdaftar kursus ini!'));
+      }
+
+      const contents = myCourse.get('contents', { plain: true });
+      const sections = myCourse.course.get('sections', { plain: true });
+
+      return res.status(200).json(
+        response(200, 'Berhasil Mendapatkan Contents', {
+          sections,
+          contents: JSON.parse(contents),
+        })
+      );
+    } catch (error) {
+      return res.status(500).json(response(500, 'Internal Server Error!', error));
+    }
+  }
+);
 
 router.post(
   '/subscribe',
@@ -221,7 +247,7 @@ router.patch(
       if (!isExist) {
         return res.status(400).json(response(400, 'konten tidak di temukan!'));
       }
-      myCourse.update({
+      await myCourse.update({
         contents: JSON.stringify(myContents),
       });
       return res.status(200).json(response(200, 'Status berhasil di ubah', myContents));
