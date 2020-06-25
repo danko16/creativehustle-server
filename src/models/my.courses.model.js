@@ -26,6 +26,10 @@ module.exports = function (sequelize, DataTypes) {
           key: 'id',
         },
       },
+      contents: {
+        allowNull: false,
+        type: DataTypes.TEXT,
+      },
       createdAt: {
         allowNull: false,
         type: DataTypes.DATE,
@@ -48,11 +52,6 @@ module.exports = function (sequelize, DataTypes) {
 
     MyCourses.belongsTo(models.courses, {
       foreignKey: 'course_id',
-    });
-
-    MyCourses.hasMany(models.my_contents, {
-      foreignKey: 'my_course_id',
-      onDelete: 'CASCADE',
     });
   };
 

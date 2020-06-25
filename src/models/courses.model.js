@@ -21,6 +21,14 @@ module.exports = function (sequelize, DataTypes) {
         allowNull: false,
         type: DataTypes.STRING,
       },
+      desc: {
+        allowNull: false,
+        type: DataTypes.TEXT,
+      },
+      benefit: {
+        allowNull: false,
+        type: DataTypes.TEXT,
+      },
       price: {
         allowNull: false,
         type: DataTypes.INTEGER,
@@ -54,7 +62,7 @@ module.exports = function (sequelize, DataTypes) {
       as: 'course_assets',
     });
 
-    Courses.hasOne(models.course_recommendations, {
+    Courses.hasMany(models.course_recommendations, {
       foreignKey: 'course_id',
       onDelete: 'CASCADE',
     });
@@ -74,12 +82,7 @@ module.exports = function (sequelize, DataTypes) {
       onDelete: 'CASCADE',
     });
 
-    Courses.hasMany(models.preview_sections, {
-      foreignKey: 'course_id',
-      onDelete: 'CASCADE',
-    });
-
-    Courses.hasMany(models.preview_contents, {
+    Courses.hasMany(models.contents, {
       foreignKey: 'course_id',
       onDelete: 'CASCADE',
     });

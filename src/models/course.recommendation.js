@@ -17,6 +17,15 @@ module.exports = function (sequelize, DataTypes) {
           key: 'id',
         },
       },
+      student_id: {
+        allowNull: false,
+        type: DataTypes.INTEGER,
+        foreignKey: true,
+        references: {
+          model: 'students',
+          key: 'id',
+        },
+      },
       createdAt: {
         allowNull: false,
         type: DataTypes.DATE,
@@ -32,6 +41,10 @@ module.exports = function (sequelize, DataTypes) {
   CourseRecommendation.associate = function (models) {
     CourseRecommendation.belongsTo(models.courses, {
       foreignKey: 'course_id',
+    });
+
+    CourseRecommendation.belongsTo(models.students, {
+      foreignKey: 'student_id',
     });
   };
 

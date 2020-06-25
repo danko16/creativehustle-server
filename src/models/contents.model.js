@@ -8,6 +8,15 @@ module.exports = function (sequelize, DataTypes) {
         autoIncrement: true,
         type: DataTypes.INTEGER,
       },
+      course_id: {
+        allowNull: false,
+        foreignKey: true,
+        type: DataTypes.INTEGER,
+        references: {
+          model: 'courses',
+          key: 'id',
+        },
+      },
       section_id: {
         allowNull: false,
         foreignKey: true,
@@ -25,6 +34,10 @@ module.exports = function (sequelize, DataTypes) {
         allowNull: false,
         type: DataTypes.STRING,
       },
+      is_preview: {
+        allowNull: false,
+        type: DataTypes.BOOLEAN,
+      },
       createdAt: {
         allowNull: false,
         type: DataTypes.DATE,
@@ -38,13 +51,11 @@ module.exports = function (sequelize, DataTypes) {
   );
 
   Contents.assoctiate = function (models) {
+    Contents.belongsTo(models.courses, {
+      foreignKey: 'course_id',
+    });
     Contents.belongsTo(models.sections, {
       foreignKey: 'section_id',
-    });
-
-    Contents.hasMany(models.my_contents, {
-      foreignKey: 'content_id',
-      onDelete: 'CASCADE',
     });
   };
   return Contents;

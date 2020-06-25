@@ -8,8 +8,6 @@ const {
   sections: Section,
   contents: Content,
   teachers: Teacher,
-  preview_sections: PreviewSection,
-  preview_contents: PreviewContent,
 } = require('../models');
 const {
   auth: { isAllow },
@@ -43,6 +41,8 @@ router.post(
   isAllow,
   [
     query('title', 'title should present').exists(),
+    query('desc', 'description should present').exists(),
+    query('benefit', 'benefit should present').exists(),
     query('price', 'price should present').exists(),
   ],
   async (req, res) => {
@@ -51,7 +51,7 @@ router.post(
       return res.status(422).json(response(422, errors.array()));
     }
     const { user } = res.locals;
-    const { title, price, promo_price } = req.query;
+    const { title, price, desc, benefit, promo_price } = req.query;
 
     if (user.type !== 'teacher') {
       return res.status(400).json(response(400, 'Anda tidak terdaftar sebagai mentor'));
@@ -66,7 +66,6 @@ router.post(
 
       try {
         const { file } = req;
-
         const servePath = `uploads/${file.filename}`;
         const filePath = `${file.destination}/${file.filename}`;
         const urlPath = `${config.serverDomain}/${servePath}`;
@@ -76,6 +75,8 @@ router.post(
             teacher_id: user.id,
             title,
             price,
+            desc,
+            benefit,
             promo_price,
             course_assets: {
               url: urlPath,
@@ -92,6 +93,8 @@ router.post(
           title,
           price,
           promo_price,
+          desc,
+          benefit: JSON.parse(benefit),
           thumbnail: urlPath,
         });
 
@@ -151,23 +154,26 @@ router.post(
 
         for (let j = 0; j < contents.length; j++) {
           await Content.create({
+            course_id: kursus_id,
             section_id: section.id,
             title: contents[j].title,
             url: contents[j].url,
+            is_preview: contents[j].is_preview,
           });
         }
       }
 
       kursus = await Course.findOne({
         where: { id: kursus_id },
+        attributes: { exclude: ['createdAt', 'updatedAt'] },
         include: [
           {
             model: Section,
-            attributes: ['id', 'title'],
-            include: {
-              model: Content,
-              attributes: ['id', 'section_id', 'title', 'url'],
-            },
+            attributes: { exclude: ['createdAt', 'updatedAt'] },
+          },
+          {
+            model: Content,
+            attributes: { exclude: ['createdAt', 'updatedAt'] },
           },
           {
             model: Asset,
@@ -180,96 +186,10 @@ router.post(
         ],
       });
 
-      return res
-        .status(200)
-        .json(response(200, 'Berhasil menambahkan section dan content', kursus));
-    } catch (error) {
-      console.log(error);
-      return res.status(500).json(response(500, 'Internal Server Error!', error));
-    }
-  }
-);
-
-router.post(
-  '/preview-section',
-  isAllow,
-  [
-    body('kursus_id', 'kursus id should be present').exists(),
-    body('preview_sections', 'preview sections should be present')
-      .exists()
-      .isArray()
-      .withMessage('sections must be array'),
-  ],
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(422).json(response(422, errors.array()));
-    }
-
-    const { user } = res.locals;
-    const { preview_sections, kursus_id } = req.body;
-
-    if (user.type !== 'teacher') {
-      return res.status(400).json(response(400, 'Anda tidak terdaftar sebagai mentor'));
-    }
-
-    try {
-      if (!preview_sections.length) {
-        return res.status(400).json(response(400, 'Request preview sections kosong'));
-      }
-
-      let kursus = await Course.findOne({
-        where: { id: kursus_id },
-        include: { model: PreviewSection },
-      });
-
-      if (!kursus) {
-        return res.status(400).json(response(400, 'kursus tidak ditemukan'));
-      }
-
-      if (kursus.preview_sections.length) {
-        return res.status(400).json(response(400, 'Silahkan update kursus'));
-      }
-
-      for (let i = 0; i < preview_sections.length; i++) {
-        const previewSection = await PreviewSection.create({
-          course_id: kursus.id,
-          title: preview_sections[i].title,
-        });
-
-        const contents = preview_sections[i].preview_contents;
-
-        for (let j = 0; j < contents.length; j++) {
-          await PreviewContent.create({
-            course_id: kursus.id,
-            preview_sections_id: previewSection.id,
-            title: contents[j].title,
-            url: contents[j].url,
-          });
-        }
-      }
-
-      kursus = await Course.findOne({
-        where: { id: kursus_id },
-        include: [
-          {
-            model: PreviewSection,
-            attributes: ['id', 'title'],
-            include: {
-              model: PreviewContent,
-              attributes: ['id', 'preview_sections_id', 'title', 'url'],
-            },
-          },
-          {
-            model: Asset,
-            as: 'course_assets',
-            attributes: ['url'],
-            where: {
-              type: 'thumbnail',
-            },
-          },
-        ],
-      });
+      kursus = kursus.get({ plain: true });
+      kursus.benefit = JSON.parse(kursus.benefit);
+      kursus.thumbnail = kursus.course_assets.url;
+      delete kursus.course_assets;
 
       return res
         .status(200)
@@ -295,7 +215,7 @@ router.get('/', [query('from', 'from must be present').exists()], async (req, re
       limit: 9,
       include: [
         {
-          model: PreviewSection,
+          model: Section,
           attributes: { exclude: ['createdAt', 'updatedAt'] },
           required: true,
         },
@@ -312,37 +232,38 @@ router.get('/', [query('from', 'from must be present').exists()], async (req, re
           attributes: ['full_name'],
         },
         {
-          model: PreviewContent,
+          model: Content,
           required: true,
           attributes: { exclude: ['createdAt', 'updatedAt'] },
         },
       ],
-    });
+    }).map((el) => el.get({ plain: true }));
 
-    const kursusPayload = [];
-    const sectionsPayload = [];
-    const contentsPayload = [];
+    const courses = [];
+    const sections = [];
+    const contents = [];
     for (let i = 0; i < kursus.length; i++) {
-      const { preview_sections, course_assets, preview_contents, teacher } = kursus[i];
-      const course = Object.freeze({
+      courses.push({
         id: kursus[i].id,
         teacher_id: kursus[i].teacher_id,
         title: kursus[i].title,
+        desc: kursus[i].desc,
+        benefit: JSON.parse(kursus[i].benefit),
         price: kursus[i].price,
         promo_price: kursus[i].promo_price,
-        teacher_name: teacher.full_name,
-        thumbnail: course_assets.url,
+        teacher_name: kursus[i].teacher.full_name,
+        thumbnail: kursus[i].course_assets.url,
       });
 
-      kursusPayload.push(course);
-      sectionsPayload.push(...preview_sections);
-      contentsPayload.push(...preview_contents);
+      sections.push(...kursus[i].sections);
+      contents.push(...kursus[i].contents);
     }
+
     return res.status(200).json(
       response(200, 'Berhasil mendapatkan kursus', {
-        courses: kursusPayload,
-        sections: sectionsPayload,
-        contents: contentsPayload,
+        courses,
+        sections,
+        contents,
       })
     );
   } catch (error) {
