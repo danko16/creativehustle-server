@@ -1,10 +1,12 @@
 const express = require('express');
 const { body, param, validationResult } = require('express-validator');
+const { Op } = require('sequelize');
 const {
   courses: Course,
   sections: Section,
   contents: Content,
   teachers: Teacher,
+  students: Student,
   my_courses: MyCourse,
   digital_assets: Asset,
   course_recommendations: CourseRecommendation,
@@ -265,9 +267,47 @@ router.get('/rekomendasi', isAllow, async (req, res) => {
   }
 
   try {
+    const student = await Student.findOne({
+      where: { id: user.id },
+      include: [
+        {
+          model: MyCourse,
+          required: false,
+        },
+        {
+          model: CourseRecommendation,
+          required: false,
+        },
+      ],
+    });
+
+    if (!student) {
+      return res.status(400).json(response(400, 'Anda tidak terdaftar sebagai siswa'));
+    }
+
+    const myCoursesId = student.get('my_courses', { plain: true }).map((val) => val.course_id);
+    const myRecommendId = student
+      .get('course_recommendations', { plain: true })
+      .map((val) => val.course_id);
+
+    const recommendation = await Course.findAll({
+      where: {
+        id: {
+          [Op.notIn]: [...myCoursesId, ...myRecommendId],
+        },
+      },
+      attributes: ['id'],
+      limit: 4,
+    }).map((val) => ({ course_id: val.id, student_id: student.id }));
+
+    await CourseRecommendation.destroy({ where: { course_id: myCoursesId, student_id: user.id } });
+    if (recommendation.length) {
+      await CourseRecommendation.bulkCreate(recommendation);
+    }
+
     const recommendations = await CourseRecommendation.findAll({
       attributes: { exclude: ['createdAt', 'updatedAt'] },
-      limit: 2,
+      limit: 4,
       include: {
         model: Course,
         attributes: { exclude: ['createdAt', 'updatedAt'] },

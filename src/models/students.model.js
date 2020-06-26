@@ -77,6 +77,10 @@ module.exports = function (sequelize, DataTypes) {
       foreignKey: 'student_id',
     });
 
+    Students.hasMany(models.course_recommendations, {
+      foreignKey: 'student_id',
+    });
+
     Students.hasMany(models.ratings, {
       foreignKey: 'student_id',
       onDelete: 'CASCADE',

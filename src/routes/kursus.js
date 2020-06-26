@@ -226,6 +226,10 @@ router.get('/', [query('from', 'from must be present').exists()], async (req, re
           model: Teacher,
           attributes: ['full_name'],
         },
+        {
+          model: Content,
+          required: true,
+        },
       ],
     }).map((el) => el.get({ plain: true }));
 
