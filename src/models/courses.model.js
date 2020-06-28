@@ -59,6 +59,7 @@ module.exports = function (sequelize, DataTypes) {
     });
 
     Courses.hasOne(models.digital_assets, {
+      foreignKey: 'course_id',
       as: 'course_assets',
     });
 

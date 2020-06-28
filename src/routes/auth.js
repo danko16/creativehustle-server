@@ -1,4 +1,6 @@
 const express = require('express');
+const multer = require('multer');
+const fs = require('fs');
 const { body, query, validationResult } = require('express-validator');
 const passport = require('./passport');
 const url = require('url');
@@ -12,6 +14,24 @@ const {
 const { students: Student, teachers: Teacher, digital_assets: Asset } = require('../models');
 
 const router = express.Router();
+
+const storage = multer.diskStorage({
+  destination: config.uploads,
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + '.' + file.mimetype.split('/')[1]);
+  },
+});
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 8000000, files: 3 },
+  fileFilter: async function (req, file, cb) {
+    // if (!req.body.type) {
+    //   cb(new Error('Type need to be specified'));
+    // }
+    cb(null, true);
+  },
+}).single('file');
 
 router.post('/is-allow', isAllow, async (req, res) => {
   try {
@@ -108,6 +128,7 @@ router.post(
           id: user.id,
           name: user.full_name,
           email: user.email,
+          phone: user.phone,
           avatar: null,
         },
         type,
@@ -194,6 +215,7 @@ router.post(
           id: user.id,
           name: user.full_name,
           email: user.email,
+          phone: user.phone,
           avatar,
         },
         type,
@@ -201,7 +223,6 @@ router.post(
 
       return res.status(200).json(response(200, 'Login berhasil', payload));
     } catch (error) {
-      console.log(error);
       return res.status(500).json(response(500, 'Internal Server Error!', error));
     }
   }
@@ -245,6 +266,181 @@ router.get(
   }
 );
 
+router.patch(
+  '/profile',
+  isAllow,
+  [
+    query('name', 'name should be present').exists(),
+    query('type', 'type should be present').exists(),
+    query('phone', 'phone number should be present').exists(),
+  ],
+  async function (req, res) {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json(response(422, errors.array()));
+    }
+
+    const { user } = res.locals;
+
+    const { name, phone } = req.query;
+
+    let isPhoneExist = false;
+    if (user.type === 'student') {
+      const isPhone = await Student.findOne({ where: { phone } });
+      if (isPhone) {
+        isPhoneExist = true;
+      }
+    } else if (user.type === 'teacher') {
+      const isPhone = await Teacher.findOne({ where: { phone } });
+      if (isPhone) {
+        isPhoneExist = true;
+      }
+    }
+
+    if (isPhoneExist) {
+      return res.status(400).json(response(400, 'Nomor Telephone sudah terdaftar'));
+    }
+    upload(req, res, async function (error) {
+      if (error instanceof multer.MulterError) {
+        return res.status(500).json(response(500, 'Internal Server Error!', error));
+      } else if (error) {
+        return res.status(500).json(response(500, 'Unkonwn Error!', error));
+      }
+      try {
+        const { file } = req;
+        let servePath;
+        let filePath;
+        let urlPath;
+
+        if (file) {
+          servePath = `uploads/${file.filename}`;
+          filePath = `${file.destination}/${file.filename}`;
+          urlPath = `${config.serverDomain}/${servePath}`;
+        }
+
+        let payload;
+        if (user.type === 'student') {
+          if (file) {
+            const asset = await Asset.findOne({
+              where: { student_id: user.id, type: 'avatar' },
+              as: 'student_assets',
+            });
+
+            if (asset) {
+              if (asset.path) {
+                fs.unlinkSync(asset.path);
+              }
+              await asset.update({
+                url: urlPath,
+                path: filePath,
+                filename: file.filename,
+              });
+            } else {
+              await Asset.create({
+                url: urlPath,
+                path: filePath,
+                filename: file.filename,
+                type: 'avatar',
+                student_id: user.id,
+              });
+            }
+          }
+
+          await Student.update(
+            {
+              full_name: name,
+              phone: phone.trim(),
+            },
+            { where: { id: user.id } }
+          );
+
+          payload = await Student.findOne({
+            where: {
+              id: user.id,
+            },
+            include: {
+              model: Asset,
+              as: 'student_assets',
+              where: {
+                type: 'avatar',
+              },
+              required: false,
+            },
+          });
+
+          payload = Object.freeze({
+            id: payload.id,
+            name: payload.full_name,
+            avatar: payload.student_assets[0].dataValues.url,
+            email: payload.email,
+            phone: payload.phone,
+          });
+        } else if (user.type === 'teacher') {
+          if (file) {
+            const asset = await Asset.findOne({
+              where: { teacher_id: user.id, type: 'avatar' },
+              as: 'techer_assets',
+            });
+
+            if (asset) {
+              if (asset.path) {
+                fs.unlinkSync(asset.path);
+              }
+              await asset.update({
+                url: urlPath,
+                path: filePath,
+                filename: file.filename,
+              });
+            } else {
+              await Asset.create({
+                url: urlPath,
+                path: filePath,
+                filename: file.filename,
+                type: 'avatar',
+                teacher_id: user.id,
+              });
+            }
+          }
+
+          await Teacher.update(
+            {
+              full_name: name,
+              phone: phone.trim(),
+            },
+            { where: { id: user.id } }
+          );
+
+          payload = await Teacher.findOne({
+            where: {
+              id: user.id,
+            },
+            include: {
+              model: Asset,
+              as: 'teacher_assets',
+              where: {
+                type: 'avatar',
+              },
+              required: false,
+            },
+          });
+
+          payload = Object.freeze({
+            id: payload.id,
+            name: payload.full_name,
+            avatar: payload.teacher_assets[0].dataValues.url,
+            email: payload.email,
+            phone: payload.phone,
+          });
+        }
+
+        return res.status(200).json(response(200, 'Berhasil Update Profile', payload));
+      } catch (error) {
+        return res.status(500).json(response(500, 'Internal Server Error!', error));
+      }
+    });
+  }
+);
+
 router.get(
   '/google',
   passport.authenticate('google', {
@@ -271,6 +467,7 @@ router.get(
           id: user.id,
           name: user.full_name,
           avatar: user.student_assets.length ? user.student_assets[0].dataValues.url : null,
+          phone: user.phone,
           email: user.email,
           type: 'student',
         },

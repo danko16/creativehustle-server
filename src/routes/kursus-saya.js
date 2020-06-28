@@ -185,9 +185,12 @@ router.post(
         return res.status(400).json(response(400, 'anda sudah subscribe kursus ini'));
       }
 
+      const contents = kursus.get('contents', { plain: true });
+
       const myContents = [];
-      for (let i = 0; i < kursus.contents.length; i++) {
-        myContents.push({ ...kursus.contents[i].dataValues, done: false });
+      for (let i = 0; i < contents.length; i++) {
+        const [section] = kursus.sections.filter((val) => val.id === contents[i].section_id);
+        myContents.push({ ...contents[i], section_title: section.title, done: false });
       }
 
       kursusSaya = await MyCourse.create({
@@ -307,6 +310,9 @@ router.get('/rekomendasi', isAllow, async (req, res) => {
 
     const recommendations = await CourseRecommendation.findAll({
       attributes: { exclude: ['createdAt', 'updatedAt'] },
+      where: {
+        student_id: user.id,
+      },
       limit: 4,
       include: {
         model: Course,

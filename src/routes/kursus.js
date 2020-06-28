@@ -66,6 +66,9 @@ router.post(
 
       try {
         const { file } = req;
+        if (!file) {
+          return res.status(400).json(response(400, 'File must be present'));
+        }
         const servePath = `uploads/${file.filename}`;
         const filePath = `${file.destination}/${file.filename}`;
         const urlPath = `${config.serverDomain}/${servePath}`;

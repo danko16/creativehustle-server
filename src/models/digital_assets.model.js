@@ -24,6 +24,33 @@ module.exports = function (sequelize, DataTypes) {
         allowNull: false,
         type: DataTypes.STRING,
       },
+      student_id: {
+        allowNull: true,
+        foreignKey: true,
+        type: DataTypes.INTEGER,
+        references: {
+          model: 'students',
+          key: 'id',
+        },
+      },
+      teacher_id: {
+        allowNull: true,
+        foreignKey: true,
+        type: DataTypes.INTEGER,
+        references: {
+          model: 'teachers',
+          key: 'id',
+        },
+      },
+      course_id: {
+        allowNull: true,
+        foreignKey: true,
+        type: DataTypes.INTEGER,
+        references: {
+          model: 'courses',
+          key: 'id',
+        },
+      },
       createdAt: {
         allowNull: false,
         type: DataTypes.DATE,
@@ -41,15 +68,15 @@ module.exports = function (sequelize, DataTypes) {
 
   DigitalAssets.associate = function (models) {
     DigitalAssets.belongsTo(models.students, {
-      as: 'student_assets',
+      foreignKey: 'student_id',
     });
 
     DigitalAssets.belongsTo(models.teachers, {
-      as: 'teacher_assets',
+      foreignKey: 'teacher_id',
     });
 
     DigitalAssets.belongsTo(models.courses, {
-      as: 'course_assets',
+      foreignKey: 'course_id',
     });
   };
 

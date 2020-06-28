@@ -46,6 +46,14 @@ passport.use(
             last_login: Date.now(),
             is_active: true,
           });
+
+          if (!student.student_assets.length) {
+            await Asset.create({
+              url: profile._json.picture,
+              type: 'avatar',
+              student_id: student.id,
+            });
+          }
         } else {
           const password = generatePassword();
           const createPayload = Object.freeze({

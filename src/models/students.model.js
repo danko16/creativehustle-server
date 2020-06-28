@@ -70,6 +70,7 @@ module.exports = function (sequelize, DataTypes) {
   // eslint-disable-next-line no-unused-vars
   Students.associate = function (models) {
     Students.hasMany(models.digital_assets, {
+      foreignKey: 'student_id',
       as: 'student_assets',
     });
 
