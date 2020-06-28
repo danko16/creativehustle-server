@@ -1,4 +1,5 @@
 const express = require('express');
+const sequelize = require('sequelize');
 const multer = require('multer');
 const fs = require('fs');
 const { body, query, validationResult } = require('express-validator');
@@ -12,6 +13,7 @@ const {
   response,
 } = require('../utils');
 const { students: Student, teachers: Teacher, digital_assets: Asset } = require('../models');
+const Op = sequelize.Op;
 
 const router = express.Router();
 
@@ -267,11 +269,54 @@ router.get(
 );
 
 router.patch(
+  '/password',
+  isAllow,
+  [
+    body('new_password', 'new password should be present').exists(),
+    body('old_password', 'old password should be present').exists(),
+  ],
+  async function (req, res) {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json(response(422, errors.array()));
+    }
+
+    const { user } = res.locals;
+    const { old_password, new_password } = req.body;
+    try {
+      if (user.type === 'student') {
+        const student = await Student.findOne({ where: { id: user.id } });
+        const compare = encrypt(old_password) === student.password;
+        if (!compare && student.provider !== 'google') {
+          return res.status(400).json(response(400, 'Password Lama Salah'));
+        }
+        await student.update({
+          password: encrypt(new_password),
+          provider: 'local',
+        });
+      } else if (user.type === 'teacher') {
+        const teacher = await Teacher.findOne({ where: { id: user.id } });
+        const compare = encrypt(old_password) === teacher.password;
+        if (!compare) {
+          return res.status(400).json(response(400, 'Password Lama Salah'));
+        }
+        await teacher.update({
+          password: encrypt(new_password),
+        });
+      }
+
+      return res.status(200).json(response(200, 'Berhasil Mengganti Password'));
+    } catch (error) {
+      return res.status(500).json(response(500, 'Internal Server Error!', error));
+    }
+  }
+);
+
+router.patch(
   '/profile',
   isAllow,
   [
     query('name', 'name should be present').exists(),
-    query('type', 'type should be present').exists(),
     query('phone', 'phone number should be present').exists(),
   ],
   async function (req, res) {
@@ -286,12 +331,26 @@ router.patch(
 
     let isPhoneExist = false;
     if (user.type === 'student') {
-      const isPhone = await Student.findOne({ where: { phone } });
+      const isPhone = await Student.findOne({
+        where: {
+          phone,
+          id: {
+            [Op.not]: user.id,
+          },
+        },
+      });
       if (isPhone) {
         isPhoneExist = true;
       }
     } else if (user.type === 'teacher') {
-      const isPhone = await Teacher.findOne({ where: { phone } });
+      const isPhone = await Teacher.findOne({
+        where: {
+          phone,
+          id: {
+            [Op.not]: user.id,
+          },
+        },
+      });
       if (isPhone) {
         isPhoneExist = true;
       }
