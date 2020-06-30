@@ -3,12 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
     <style>
       body {
         margin: 0;
         padding: 0;
-        background-color: #f8f8f9;
+        background-color: #f8f8f9 !important;
       }
       .container {
         max-width: 800px;
@@ -17,43 +16,40 @@
       }
 
       .header {
-        position: relative;
-        height: 200px;
+        border-bottom: 1px solid #997cef;
       }
 
       .content {
         min-height: 400px;
+        padding: 20px 0;
       }
 
       .footer {
-        height: 300px;
-        background-color: #2b303a;
+        background-color: #5676ca;
+        padding: 40px;
       }
+
       .header img {
-        position: absolute;
+        width: 300px;
+        margin-left: auto;
         display: block;
-        left: 50%;
-        top: 50%;
-        margin-left: -100px;
-        margin-top: -75px;
-        width: 200px;
-        height: 150px;
+        margin-right: auto;
+        padding: 40px;
       }
 
       .content > * {
-        margin: 12px auto;
         text-align: center;
-        max-width: 350px;
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
       }
 
       .content .button {
-        display: flex;
+        display: block;
         background-color: #1aa19c;
         cursor: pointer;
         width: 250px;
-        height: 75px;
-        align-items: center;
-        justify-content: center;
+        padding: 25px 0px;
         border-radius: 40px;
         margin-top: 2rem;
         margin-bottom: 2rem;
@@ -64,33 +60,72 @@
         text-decoration: none;
         color: white;
       }
+
+      .footer > div {
+        font-family: sans-serif;
+        text-align: center;
+        padding: 10px 0;
+        color: #fff;
+      }
+
+      .footer div:first-child {
+        font-weight: 600;
+        font-size: 20px;
+      }
+
+      .footer div:last-child {
+        font-size: 18px;
+      }
+
+      @media only screen and (max-width: 688px) {
+        .header img {
+          padding: 20px;
+        }
+
+        .content > * {
+          padding: 15px;
+        }
+      }
     </style>
+    <title>Document</title>
   </head>
   <body>
     <div class="container">
       <div class="header">
-        <img alt="I'm an image" src="images/Img1_2x.jpg" />
+        <a href="https://creativehustle.id" target="_blank">
+          <img alt="I'm an image" src="https://api.creativehustle.id/uploads/creative-hustle.png"
+        /></a>
       </div>
       <div class="content">
-        <div style="margin-top: 2rem;">
+        <div>
           <p style="font-size: 24px; color: #2b303a;">Hi, Danang Eko Y</p>
           <span style="font-size: 30px; color: #2b303a;"
-            ><strong>Verify Your Email Account</strong></span
+            ><strong>Silahkan Verifikasi Emailmu </strong></span
           >
           <p style="color: #808389; font-size: 15px;">
-            Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmodati mat tempor
-            incididunt ut labore et dolore magna aliqua.
+            validasi informasi adalah kunci penting dalam melakukan pembelajaran secara online jadi
+            pastikan kamu memverivikasi emailmu
           </p>
         </div>
-        <div class="button"><a href="">Confirm Your Email</a></div>
+        <div class="button"><a href="">Konfirmasi Emailmu</a></div>
         <p style="word-wrap: break-word;">
-          Or click link below: <br /><br />
-          <a href="">
+          atau klik link di bawah ini: <br /><br />
+          <a href="" style="color: #4e7cff;">
             http://localhost:3000/activate-account?token=U2FsdGVkX18tocmyZkz9RgugpIyxeHDUaGmK43P0595wD0Z3iSk04ywS7g5mTO5QA3WHqq1CwoRf+9cEwAV1fZYS33HjlGmNsKGw6J4tpHpuSNIkRQgauvWYAiWZVFfLBy9vNgjYeJYB92rU5EAotMDKA15Db9dS/cSZCT0x+ryv2UDHMtvTuZZZUB+1bVrIyzeY/b2X+CdQ9FQrTERrO9RylcFKbOJ6gTVNsfPJl+3k+RIvfv2QcMWW+RLoATJ9Ebs7gobPKZSKgYhppP67rmxE/bzrEqUrAfsq27utKDU=&email=danangekoyudanto1995@gmail.com&mode=signup
           </a>
         </p>
       </div>
-      <div class="footer"></div>
+      <div class="footer">
+        <div>Temukan Kami</div>
+        <div>
+          <img src="https://img.icons8.com/fluent/48/000000/instagram-new.png" />
+          <img src="https://img.icons8.com/cotton/48/000000/youtube.png" />
+          <img src="https://img.icons8.com/fluent/48/000000/twitter.png" />
+          <img src="https://img.icons8.com/officel/48/000000/whatsapp.png" />
+        </div>
+        <div>Puri Hutama Danguran, Klaten Selatan, Kota Klaten, Jawa Tengah 57425</div>
+        <div>© 2020 creativehustle.id</div>
+      </div>
     </div>
   </body>
 </html>

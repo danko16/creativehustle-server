@@ -5,7 +5,7 @@ const transporter = nodemailer.createTransport(config.email);
 
 const emailSender = new Email({
   message: {
-    from: config.email_sender,
+    from: '"Creative Hustle Info" no-reply@creativehustle.id',
   },
   send: true,
   transport: transporter,
@@ -52,13 +52,14 @@ const sendActivationEmail = (data) => {
         to: data.email,
       },
       locals: {
-        subject: 'Verify Your Email Account',
+        subject: 'Silahkan Verifikasi Emailmu',
         preHeaderText: '',
         headerText: 'Hi, ' + data.name + '!',
-        paragraph1: 'You need to validate your email to activate account: ',
-        paragraph2: 'To validate your email, please press the button below.',
+        paragraph1:
+          'validasi informasi adalah kunci penting dalam melakukan pembelajaran secara online jadi ',
+        paragraph2: 'pastikan kamu memverivikasi emailmu',
         ctaLink: data.tokenUrl,
-        ctaText: 'Confirm Your Email',
+        ctaText: 'Konfirmasi Emailmu',
       },
     })
     .then((res) => {

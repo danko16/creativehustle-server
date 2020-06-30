@@ -1,14 +1,6 @@
 const config = require('./config.global');
-config.email = {
-  service: 'SendGrid',
-  auth: {
-    user: 'danko16',
-    pass: '/sAMbv8v7j_+FpK',
-  },
-};
 config.documents = 'public/documents';
 config.uploads = 'public/uploads';
-config.email_sender = '"http://localhost:3000" no-reply@localhost:3000';
 config.serverDomain = 'http://localhost:3000';
 config.clientDomain = 'http://localhost:3006';
 config.host = 'http://localhost';

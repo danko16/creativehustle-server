@@ -1,13 +1,4 @@
 const config = require('./config.global');
-
-config.email = {
-  host: '',
-  port: '',
-  auth: {
-    user: '',
-    pass: '',
-  },
-};
 config.documents = 'public/documents';
 config.uploads = 'public/uploads';
 config.serverDomain = 'https://api.creativehustle.id';
