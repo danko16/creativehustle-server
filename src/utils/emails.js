@@ -20,19 +20,13 @@ const sendPasswordReset = (data) => {
         to: data.email,
       },
       locals: {
-        subject: 'Password Reset Request',
+        subject: 'Permintaan Reset Password',
         preHeaderText: '',
         headerText: 'Hi, ' + data.name + '!',
-        paragraph1:
-          'Someone requested that the password be reset for the following account: ' +
-          data.email +
-          '.',
-
-        paragraph2: 'To reset your password, please press the button below.',
+        paragraph1: 'Seseorang telah meminta reset password untuk akun ini: ' + data.email + '.',
+        paragraph2: 'untuk mereset password anda silahkan klik tombol di bawah ini.',
         ctaLink: data.tokenUrl,
         ctaText: 'Reset Password',
-        paragraph3: `If that doesn't work, copy and paste the following link in your browser:`,
-        paragraph4: 'If this was a mistake, just ignore this email and nothing will happen.',
       },
     })
     .then((res) => {

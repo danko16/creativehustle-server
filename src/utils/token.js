@@ -69,8 +69,7 @@ const getTokenReset = async (payload) => {
 
 const checkTokenReset = async (token) => {
   try {
-    let ciphertext = CryptoJS.AES.encrypt(token, config.aessecret);
-    let decrypted = CryptoJS.AES.decrypt(ciphertext.toString(), config.aessecret);
+    let decrypted = CryptoJS.AES.decrypt(token, config.aessecret);
     let verified = await jwt.verify(
       decrypted.toString(CryptoJS.enc.Utf8),
       config.jwtsecret,

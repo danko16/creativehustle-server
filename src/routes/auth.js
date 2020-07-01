@@ -13,6 +13,8 @@ const {
   response,
 } = require('../utils');
 const { students: Student, teachers: Teacher, digital_assets: Asset } = require('../models');
+const { getTokenReset, checkTokenReset } = require('../utils/token');
+const { sendPasswordReset } = require('../utils/emails');
 const Op = sequelize.Op;
 
 const router = express.Router();
@@ -115,7 +117,7 @@ router.post(
 
       const tokenUrl = `${config.serverDomain}/auth/confirm-email?token=${registerToken}&email=${user.email}&type=${type}`;
 
-      await sendActivationEmail({
+      sendActivationEmail({
         email: user.email,
         name: user.full_name,
         tokenUrl,
@@ -230,11 +232,97 @@ router.post(
   }
 );
 
+router.post(
+  '/forgot',
+  [
+    body('email', 'email must be present').exists().isEmail().withMessage('must be a valid email'),
+    body('type', 'type must be present').exists(),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json(response(422, errors.array()));
+    }
+    const { email, type } = req.body;
+    try {
+      let user;
+      if (type === 'student') {
+        user = await Student.findOne({ where: { email } });
+      } else if (type === 'teacher') {
+        user = await Teacher.findOne({ where: { email } });
+      }
+
+      if (!user) {
+        return res.status(400).json(response(400, 'Anda belum terdaftar sebagai siswa'));
+      }
+
+      const resetPasswordToken = await getTokenReset({ uid: user.id, for: 'reset' });
+      if (!resetPasswordToken) {
+        return res.status(500).json(response(500, 'Internal Server Error!'));
+      }
+
+      const tokenUrl = `${config.clientDomain}/reset-password?token=${resetPasswordToken}&email=${user.email}&type=${type}`;
+
+      sendPasswordReset({
+        email: user.email,
+        name: user.full_name,
+        tokenUrl,
+      });
+
+      return res.status(200).json(response(200, 'Silahkan check email anda untuk reset password'));
+    } catch (error) {
+      return res.status(500).json(response(500, 'Internal Server Error!', error));
+    }
+  }
+);
+
+router.post(
+  '/reset',
+  [
+    body('token', 'token should be present').exists(),
+    body('email', 'email should be present').exists(),
+    body('new_password', 'new password should be present').exists(),
+    body('type', 'type should be present').exists(),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json(response(422, errors.array()));
+    }
+
+    const { token, new_password, email, type } = req.body;
+    console.log(email, type);
+    try {
+      let user;
+      if (type === 'student') {
+        user = await Student.findOne({ where: { email } });
+      } else if (type === 'teacher') {
+        user = await Teacher.findOne({ where: { email } });
+      }
+
+      if (!user) {
+        return res.status(400).json(response(400, 'User not found!'));
+      }
+
+      const verifyToken = await checkTokenReset(token.replace(/ /g, '+'));
+      if (!verifyToken) {
+        return res.status(400).json(response(400, 'Token tidak sesuai!'));
+      }
+
+      await user.update({ is_active: true, password: encrypt(new_password) });
+      return res.status(200).json(response(200, 'Reset password berhasil'));
+    } catch (error) {
+      return res.status(500).json(response(500, 'Internal Server Error!', error));
+    }
+  }
+);
+
 router.get(
   '/confirm-email',
   [
     query('token', 'token should be present').exists(),
     query('email', 'email should be present').exists(),
+    query('type', 'type should be present').exists(),
   ],
   async (req, res) => {
     const errors = validationResult(req);
@@ -259,9 +347,9 @@ router.get(
         return res.status(400).json(response(400, 'Token tidak sesuai!'));
       }
 
-      await user.update({ is_active: true, updated_date: Date.now() });
+      await user.update({ is_active: true });
 
-      return res.status(200).json(response(200, 'Konfirmasi email berhasil'));
+      return res.redirect(`${config.clientDomain}`);
     } catch (error) {
       return res.status(500).json(response(500, 'Internal Server Error!', error));
     }
