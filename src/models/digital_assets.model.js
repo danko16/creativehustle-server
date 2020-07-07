@@ -51,6 +51,15 @@ module.exports = function (sequelize, DataTypes) {
           key: 'id',
         },
       },
+      class_id: {
+        allowNull: true,
+        foreignKey: true,
+        type: DataTypes.INTEGER,
+        references: {
+          model: 'classes',
+          key: 'id',
+        },
+      },
       createdAt: {
         allowNull: false,
         type: DataTypes.DATE,
@@ -77,6 +86,10 @@ module.exports = function (sequelize, DataTypes) {
 
     DigitalAssets.belongsTo(models.courses, {
       foreignKey: 'course_id',
+    });
+
+    DigitalAssets.belongsTo(models.classes, {
+      foreignKey: 'class_id',
     });
   };
 

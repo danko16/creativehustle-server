@@ -31,5 +31,7 @@ app.use('/documents', express.static(config.documents));
 app.use('/auth', limitedAccess, require('./routes/auth'));
 app.use('/kursus', require('./routes/kursus'));
 app.use('/kursus-saya', require('./routes/kursus-saya'));
+app.use('/kelas', require('./routes/kelas'));
+app.use('/kelas-saya', require('./routes/kelas-saya'));
 
 module.exports = app;
