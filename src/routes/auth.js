@@ -291,13 +291,34 @@ router.post(
     }
 
     const { token, new_password, email, type } = req.body;
-    console.log(email, type);
+
     try {
       let user;
       if (type === 'student') {
-        user = await Student.findOne({ where: { email } });
+        user = await Student.findOne({
+          where: { email },
+          include: {
+            model: Asset,
+            as: 'student_assets',
+            where: {
+              type: 'avatar',
+            },
+            required: false,
+          },
+        });
       } else if (type === 'teacher') {
-        user = await Teacher.findOne({ where: { email } });
+        user = await Teacher.findOne({
+          where: { email },
+
+          include: {
+            model: Asset,
+            as: 'teacher_assets',
+            where: {
+              type: 'avatar',
+            },
+            required: false,
+          },
+        });
       }
 
       if (!user) {
@@ -310,7 +331,30 @@ router.post(
       }
 
       await user.update({ is_active: true, password: encrypt(new_password) });
-      return res.status(200).json(response(200, 'Reset password berhasil'));
+
+      let avatar;
+      if (type === 'student') {
+        avatar = user.student_assets.length ? user.student_assets[0].dataValues.url : null;
+      } else if (type === 'teacher') {
+        avatar = user.teacher_assets.length ? user.teacher_assets[0].dataValues.url : null;
+      }
+
+      const loginToken = await getToken({ uid: user.id, rememberMe: true, type });
+      let getExpToken = await getPayload(loginToken.pure);
+
+      const payload = Object.freeze({
+        token: { key: loginToken.key, exp: getExpToken.exp },
+        user: {
+          id: user.id,
+          name: user.full_name,
+          email: user.email,
+          phone: user.phone,
+          avatar,
+        },
+        type,
+      });
+
+      return res.status(200).json(response(200, 'Reset password berhasil', payload));
     } catch (error) {
       return res.status(500).json(response(500, 'Internal Server Error!', error));
     }

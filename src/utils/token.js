@@ -59,7 +59,7 @@ const checkRegisterToken = async (token) => {
 
 const getTokenReset = async (payload) => {
   try {
-    let token = await jwt.sign(payload, config.jwtsecret, { expiresIn: '2h' });
+    let token = await jwt.sign(payload, config.jwtsecret, { expiresIn: '12h' });
     return CryptoJS.AES.encrypt(token, config.aessecret);
   } catch (error) {
     console.log(error);
