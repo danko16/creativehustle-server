@@ -37,6 +37,10 @@ module.exports = function (sequelize, DataTypes) {
         allowNull: true,
         type: DataTypes.INTEGER,
       },
+      tel_group: {
+        allowNull: true,
+        type: DataTypes.STRING,
+      },
       createdAt: {
         allowNull: false,
         type: DataTypes.DATE,
@@ -58,7 +62,7 @@ module.exports = function (sequelize, DataTypes) {
       foreignKey: 'teacher_id',
     });
 
-    Courses.hasOne(models.digital_assets, {
+    Courses.hasMany(models.digital_assets, {
       foreignKey: 'course_id',
       as: 'course_assets',
     });

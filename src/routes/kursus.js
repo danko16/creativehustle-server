@@ -18,15 +18,22 @@ const { Op } = Sequelize;
 
 const router = express.Router();
 
-const storage = multer.diskStorage({
+const uploadsStorage = multer.diskStorage({
   destination: config.uploads,
   filename: function (req, file, cb) {
     cb(null, Date.now() + '.' + file.mimetype.split('/')[1]);
   },
 });
 
+const documentsStorage = multer.diskStorage({
+  destination: config.documents,
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + '.' + file.mimetype.split('/')[1]);
+  },
+});
+
 const upload = multer({
-  storage: storage,
+  storage: uploadsStorage,
   limits: { fileSize: 8000000, files: 3 },
   fileFilter: async function (req, file, cb) {
     // if (!req.body.type) {
@@ -35,6 +42,17 @@ const upload = multer({
     cb(null, true);
   },
 }).single('file');
+
+const uploads = multer({
+  storage: documentsStorage,
+  limits: { fileSize: 20000000, files: 5 },
+  fileFilter: async function (req, file, cb) {
+    // if (!req.body.type) {
+    //   cb(new Error('Type need to be specified'));
+    // }
+    cb(null, true);
+  },
+}).array('files', 5);
 
 router.post(
   '/',
@@ -200,6 +218,69 @@ router.post(
     } catch (error) {
       return res.status(500).json(response(500, 'Internal Server Error!', error));
     }
+  }
+);
+
+router.post(
+  '/:course_id/tambahan',
+  [
+    param('course_id', 'course id should be present').exists(),
+    query('tel_group', 'tel group should be present').exists(),
+  ],
+  isAllow,
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json(response(422, errors.array()));
+    }
+
+    const { user } = res.locals;
+    const { course_id } = req.params;
+    const { tel_group } = req.query;
+
+    if (user.type !== 'teacher') {
+      return res.status(400).json(response(400, 'Anda tidak terdaftar sebagai mentor'));
+    }
+
+    const kursus = await Course.findOne({ where: { id: course_id } });
+
+    if (!kursus) {
+      return res.status(400).json(response(400, 'kursus tidak di temukan!'));
+    }
+
+    await kursus.update({
+      tel_group,
+    });
+
+    uploads(req, res, async function (error) {
+      if (error instanceof multer.MulterError) {
+        return res.status(500).json(response(500, 'Internal Server Error!', error));
+      } else if (error) {
+        return res.status(500).json(response(500, 'Unkonwn Error!', error));
+      }
+
+      try {
+        const { files } = req;
+
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const servePath = `documents/${file.filename}`;
+          const filePath = `${file.destination}/${file.filename}`;
+          const urlPath = `${config.serverDomain}/${servePath}`;
+
+          await Asset.create({
+            course_id,
+            url: urlPath,
+            path: filePath,
+            filename: file.filename,
+            type: 'materi',
+          });
+        }
+        return res.status(200).json(response(200, 'Berhasil upload materi tambahan'));
+      } catch (error) {
+        return res.status(500).json(response(500, 'Internal Server Error!', error));
+      }
+    });
   }
 );
 

@@ -25,7 +25,7 @@ module.exports = function (sequelize, DataTypes) {
         allowNull: false,
         type: DataTypes.TEXT,
       },
-      matter: {
+      sections: {
         allowNull: false,
         type: DataTypes.TEXT,
       },
@@ -40,6 +40,10 @@ module.exports = function (sequelize, DataTypes) {
       schedules: {
         allowNull: true,
         type: DataTypes.TEXT,
+      },
+      tel_group: {
+        allowNull: true,
+        type: DataTypes.STRING,
       },
       createdAt: {
         allowNull: false,
