@@ -7,6 +7,7 @@ const {
   digital_assets: Asset,
   extra_matters: ExtraMatter,
   teachers: Teacher,
+  class_schedules: ClassSchedule,
 } = require('../models');
 const {
   auth: { isAllow },
@@ -155,9 +156,12 @@ router.post(
       if (!kelas) {
         return res.status(400).json(response(400, 'kelas tidak ditemukan!'));
       }
-      await kelas.update({
-        schedules: JSON.stringify(schedules),
-      });
+      for (let i = 0; i < schedules.length; i++) {
+        await ClassSchedule.create({
+          class_id,
+          ...schedules[i],
+        });
+      }
       return res.status(200).json(response(200, 'Berhasil Menambahkan Jadwal'));
     } catch (error) {
       return res.status(500).json(response(500, 'Internal Server Error!', error));
@@ -233,7 +237,7 @@ router.post(
   }
 );
 
-router.get('/', query('from', 'from must be present').exists(), async (req, res) => {
+router.get('/', [query('from', 'from must be present').exists()], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(422).json(response(422, errors.array()));
@@ -260,12 +264,16 @@ router.get('/', query('from', 'from must be present').exists(), async (req, res)
           model: Teacher,
           attributes: ['full_name'],
         },
+        {
+          model: ClassSchedule,
+          attributes: { exclude: ['createdAt', 'updatedAt'] },
+        },
       ],
     }).map((el) => el.get({ plain: true }));
 
     const classes = [];
     for (let i = 0; i < kelas.length; i++) {
-      const schedules = JSON.parse(kelas[i].schedules);
+      const schedules = kelas[i].class_schedules;
       schedules.sort((a, b) => {
         const aDate = a.date.split('-');
         const bDate = b.date.split('-');

@@ -37,10 +37,6 @@ module.exports = function (sequelize, DataTypes) {
         allowNull: true,
         type: DataTypes.INTEGER,
       },
-      schedules: {
-        allowNull: true,
-        type: DataTypes.TEXT,
-      },
       tel_group: {
         allowNull: true,
         type: DataTypes.STRING,
@@ -62,7 +58,7 @@ module.exports = function (sequelize, DataTypes) {
       foreignKey: 'teacher_id',
     });
 
-    Classes.hasMany(models.digital_assets, {
+    Classes.hasOne(models.digital_assets, {
       foreignKey: 'class_id',
       as: 'class_assets',
       onDelete: 'CASCADE',
@@ -74,6 +70,11 @@ module.exports = function (sequelize, DataTypes) {
     });
 
     Classes.hasMany(models.extra_matters, {
+      foreignKey: 'class_id',
+      onDelete: 'CASCADE',
+    });
+
+    Classes.hasMany(models.class_schedules, {
       foreignKey: 'class_id',
       onDelete: 'CASCADE',
     });

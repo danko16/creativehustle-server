@@ -1,34 +1,41 @@
 module.exports = function (sequelize, DataTypes) {
-  const MyClasses = sequelize.define(
-    'my_classes',
+  const ClassSchedules = sequelize.define(
+    'class_schedules',
     {
       id: {
+        type: DataTypes.INTEGER,
         primaryKey: true,
         allowNull: false,
-        type: DataTypes.INTEGER,
         autoIncrement: true,
       },
       class_id: {
-        allowNull: false,
-        foreignKey: true,
         type: DataTypes.INTEGER,
+        foreignKey: true,
+        allowNull: false,
         references: {
           model: 'classes',
           key: 'id',
         },
       },
-      student_id: {
-        foreignKey: true,
+      date: {
+        type: DataTypes.STRING,
         allowNull: false,
-        type: DataTypes.INTEGER,
-        references: {
-          model: 'students',
-          key: 'id',
-        },
       },
-      schedules: {
+      started_time: {
+        type: DataTypes.STRING,
         allowNull: false,
-        type: DataTypes.TEXT,
+      },
+      ended_time: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      link: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      password: {
+        type: DataTypes.STRING,
+        allowNull: true,
       },
       createdAt: {
         allowNull: false,
@@ -42,15 +49,10 @@ module.exports = function (sequelize, DataTypes) {
     { timestamps: true, underscored: true }
   );
 
-  MyClasses.associate = function (models) {
-    MyClasses.belongsTo(models.students, {
-      foreignKey: 'student_id',
-    });
-
-    MyClasses.belongsTo(models.classes, {
+  ClassSchedules.associate = function (models) {
+    ClassSchedules.belongsTo(models.classes, {
       foreignKey: 'class_id',
     });
   };
-
-  return MyClasses;
+  return ClassSchedules;
 };
