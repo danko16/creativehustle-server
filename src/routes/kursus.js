@@ -8,6 +8,7 @@ const {
   sections: Section,
   contents: Content,
   teachers: Teacher,
+  extra_matters: ExtraMatter,
 } = require('../models');
 const {
   auth: { isAllow },
@@ -268,8 +269,13 @@ router.post(
           const filePath = `${file.destination}/${file.filename}`;
           const urlPath = `${config.serverDomain}/${servePath}`;
 
-          await Asset.create({
+          const extraMatter = await ExtraMatter.create({
             course_id,
+            title: files[i].title ? files[i].title : 'this is development',
+          });
+
+          await Asset.create({
+            extra_matter_id: extraMatter.id,
             url: urlPath,
             path: filePath,
             filename: file.filename,

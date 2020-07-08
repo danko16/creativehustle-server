@@ -65,9 +65,15 @@ module.exports = function (sequelize, DataTypes) {
     Classes.hasMany(models.digital_assets, {
       foreignKey: 'class_id',
       as: 'class_assets',
+      onDelete: 'CASCADE',
     });
 
     Classes.hasMany(models.my_classes, {
+      foreignKey: 'class_id',
+      onDelete: 'CASCADE',
+    });
+
+    Classes.hasMany(models.extra_matters, {
       foreignKey: 'class_id',
       onDelete: 'CASCADE',
     });

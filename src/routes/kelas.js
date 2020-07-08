@@ -2,7 +2,12 @@ const express = require('express');
 const multer = require('multer');
 const sequelize = require('sequelize');
 const { query, param, body, validationResult } = require('express-validator');
-const { classes: Kelas, digital_assets: Asset, teachers: Teacher } = require('../models');
+const {
+  classes: Kelas,
+  digital_assets: Asset,
+  extra_matters: ExtraMatter,
+  teachers: Teacher,
+} = require('../models');
 const {
   auth: { isAllow },
   response,
@@ -206,8 +211,13 @@ router.post(
           const filePath = `${file.destination}/${file.filename}`;
           const urlPath = `${config.serverDomain}/${servePath}`;
 
-          await Asset.create({
+          const extraMatter = await ExtraMatter.create({
             class_id,
+            title: files[i].title ? files[i].title : 'this is development',
+          });
+
+          await Asset.create({
+            extra_matter_id: extraMatter.id,
             url: urlPath,
             path: filePath,
             filename: file.filename,

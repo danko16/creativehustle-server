@@ -60,6 +60,15 @@ module.exports = function (sequelize, DataTypes) {
           key: 'id',
         },
       },
+      extra_matter_id: {
+        allowNull: true,
+        foreignKey: true,
+        type: DataTypes.INTEGER,
+        references: {
+          model: 'extra_matters',
+          key: 'id',
+        },
+      },
       createdAt: {
         allowNull: false,
         type: DataTypes.DATE,
@@ -90,6 +99,10 @@ module.exports = function (sequelize, DataTypes) {
 
     DigitalAssets.belongsTo(models.classes, {
       foreignKey: 'class_id',
+    });
+
+    DigitalAssets.belongsTo(models.extra_matters, {
+      foreignKey: 'extra_matter_id',
     });
   };
 

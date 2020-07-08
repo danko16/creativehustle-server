@@ -10,6 +10,7 @@ const {
   my_courses: MyCourse,
   digital_assets: Asset,
   course_recommendations: CourseRecommendation,
+  extra_matters: ExtraMatter,
 } = require('../models');
 const {
   auth: { isAllow },
@@ -106,13 +107,31 @@ router.get(
     try {
       let myCourse = await MyCourse.findOne({
         where: { course_id, student_id: user.id },
-        include: {
-          model: Course,
-          include: {
-            model: Section,
-            attributes: { exclude: ['createdAt', 'updatedAt'] },
+        include: [
+          {
+            model: Course,
+            include: [
+              {
+                model: Section,
+                attributes: { exclude: ['createdAt', 'updatedAt'] },
+              },
+              {
+                model: ExtraMatter,
+                required: false,
+                attributes: { exclude: ['createdAt', 'updatedAt'] },
+                include: {
+                  model: Asset,
+                  as: 'extra_matter_assets',
+                  required: false,
+                  attributes: ['url'],
+                  where: {
+                    type: 'materi',
+                  },
+                },
+              },
+            ],
           },
-        },
+        ],
       });
 
       if (!myCourse) {
@@ -121,11 +140,19 @@ router.get(
 
       const contents = myCourse.get('contents', { plain: true });
       const sections = myCourse.course.get('sections', { plain: true });
+      const materiTambahan = myCourse.course.get('extra_matters', { plain: true }).map((el) => ({
+        id: el.id,
+        course_id: el.course_id,
+        title: el.title,
+        matter: el.extra_matter_assets.url,
+      }));
 
       return res.status(200).json(
         response(200, 'Berhasil Mendapatkan Contents', {
           sections,
           contents: JSON.parse(contents),
+          materi_tambahan: materiTambahan,
+          tel_group: myCourse.course.tel_group,
         })
       );
     } catch (error) {

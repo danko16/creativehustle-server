@@ -65,6 +65,7 @@ module.exports = function (sequelize, DataTypes) {
     Courses.hasMany(models.digital_assets, {
       foreignKey: 'course_id',
       as: 'course_assets',
+      onDelete: 'CASCADE',
     });
 
     Courses.hasMany(models.course_recommendations, {
@@ -88,6 +89,11 @@ module.exports = function (sequelize, DataTypes) {
     });
 
     Courses.hasMany(models.contents, {
+      foreignKey: 'course_id',
+      onDelete: 'CASCADE',
+    });
+
+    Courses.hasMany(models.extra_matters, {
       foreignKey: 'course_id',
       onDelete: 'CASCADE',
     });
