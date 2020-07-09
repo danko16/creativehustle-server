@@ -44,6 +44,10 @@ router.get('/', isAllow, async (req, res) => {
             model: Teacher,
             attributes: ['full_name'],
           },
+          {
+            model: ClassSchedule,
+            attributes: { exclude: ['createdAt', 'updatedAt'] },
+          },
         ],
       },
     });
@@ -51,11 +55,35 @@ router.get('/', isAllow, async (req, res) => {
     const classes = [];
     for (let i = 0; i < myClass.length; i++) {
       const kelas = myClass[i].get('class', { plain: true });
+      const schedules = kelas.class_schedules;
+      schedules.sort((a, b) => {
+        const aDate = a.date.split('-');
+        const bDate = b.date.split('-');
+        const startDate = new Date(aDate[2], aDate[1], aDate[0]);
+        const endDate = new Date(bDate[2], bDate[1], bDate[0]);
+        if (a.link) {
+          delete a.link;
+        }
+        if (a.password) {
+          delete a.password;
+        }
+        if (b.link) {
+          delete b.link;
+        }
+        if (b.password) {
+          delete b.password;
+        }
+
+        return startDate - endDate;
+      });
+
       classes.push({
         id: kelas.id,
         teacher_id: kelas.teacher_id,
         title: kelas.title,
         tel_group: kelas.tel_group,
+        start_date: schedules[0],
+        end_date: schedules[schedules.length - 1],
         thumbnail: kelas.class_assets.url,
         teacher_name: kelas.teacher.full_name,
       });
