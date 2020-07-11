@@ -154,8 +154,18 @@ router.get(
         matter: el.extra_matter_assets.url,
       }));
 
+      const schedules = kelas.class_schedules;
+      schedules.sort((a, b) => {
+        const aDate = a.date.split('-');
+        const bDate = b.date.split('-');
+        const startDate = new Date(aDate[2], aDate[1], aDate[0]);
+        const endDate = new Date(bDate[2], bDate[1], bDate[0]);
+
+        return startDate - endDate;
+      });
+
       const payload = {
-        schedules: kelas.class_schedules,
+        schedules,
         materi_tambahan: materiTambahan,
         tel_group: kelas.tel_group,
       };

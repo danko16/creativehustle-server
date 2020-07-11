@@ -1,6 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 const sequelize = require('sequelize');
+const sharp = require('sharp');
 const { query, param, body, validationResult } = require('express-validator');
 const {
   classes: Kelas,
@@ -70,7 +71,7 @@ router.post(
     }
 
     const { user } = res.locals;
-    const { title, price, desc, sections, promo_price } = req.query;
+    const { title, price, desc, sections, promo_price, tel_group } = req.query;
 
     if (user.type !== 'teacher') {
       return res.status(400).json(response(400, 'anda tidak terdaftar sebagai mentor!'));
@@ -92,6 +93,12 @@ router.post(
         const filePath = `${file.destination}/${file.filename}`;
         const urlPath = `${config.serverDomain}/${servePath}`;
 
+        const sharpFile = await sharp(filePath).toBuffer();
+
+        sharp(sharpFile)
+          .resize(420, 260)
+          .toFile(filePath, (err, info) => {});
+
         const kelas = await Kelas.create(
           {
             teacher_id: user.id,
@@ -100,6 +107,8 @@ router.post(
             desc,
             sections,
             promo_price,
+            tel_group,
+            approved: false,
             class_assets: {
               url: urlPath,
               path: filePath,
@@ -111,7 +120,7 @@ router.post(
         );
 
         const payload = Object.freeze({
-          kursus_id: kelas.id,
+          kelas_id: kelas.id,
           title,
           price,
           promo_price,
@@ -172,10 +181,7 @@ router.post(
 router.post(
   '/:class_id/tambahan',
   isAllow,
-  [
-    param('class_id', 'class id should be present'),
-    query('tel_group', 'tel group should be present'),
-  ],
+  [param('class_id', 'class id should be present').exists()],
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -183,7 +189,6 @@ router.post(
     }
 
     const { user } = res.locals;
-    const { tel_group } = req.query;
     const { class_id } = req.params;
 
     if (user.type !== 'teacher') {
@@ -195,10 +200,6 @@ router.post(
     if (!kelas) {
       return res.status(400).json(response(400, 'kelas tidak di temukan!'));
     }
-
-    await kelas.update({
-      tel_group,
-    });
 
     uploads(req, res, async function (error) {
       if (error instanceof multer.MulterError) {
@@ -248,6 +249,7 @@ router.get('/', [query('from', 'from must be present').exists()], async (req, re
     const kelas = await Kelas.findAll({
       where: {
         id: { [Op.gt]: from },
+        approved: true,
       },
       attributes: { exclude: ['createdAt', 'updatedAt'] },
       limit: 9,
@@ -266,6 +268,7 @@ router.get('/', [query('from', 'from must be present').exists()], async (req, re
         },
         {
           model: ClassSchedule,
+          required: true,
           attributes: { exclude: ['createdAt', 'updatedAt'] },
         },
       ],
@@ -345,6 +348,7 @@ router.get('/cari', [query('keywords', 'keywords must be present').exists()], as
         },
         {
           model: ClassSchedule,
+          required: true,
           attributes: { exclude: ['createdAt', 'updatedAt'] },
         },
       ],

@@ -1,5 +1,6 @@
 const express = require('express');
 const multer = require('multer');
+const sharp = require('sharp');
 const { query, body, param, validationResult } = require('express-validator');
 const {
   Sequelize,
@@ -70,7 +71,7 @@ router.post(
       return res.status(422).json(response(422, errors.array()));
     }
     const { user } = res.locals;
-    const { title, price, desc, benefit, promo_price } = req.query;
+    const { title, price, desc, benefit, promo_price, tel_group } = req.query;
 
     if (user.type !== 'teacher') {
       return res.status(400).json(response(400, 'Anda tidak terdaftar sebagai mentor'));
@@ -92,6 +93,12 @@ router.post(
         const filePath = `${file.destination}/${file.filename}`;
         const urlPath = `${config.serverDomain}/${servePath}`;
 
+        const sharpFile = await sharp(filePath).toBuffer();
+
+        sharp(sharpFile)
+          .resize(420, 260)
+          .toFile(filePath, (err, info) => {});
+
         const kursus = await Course.create(
           {
             teacher_id: user.id,
@@ -100,6 +107,8 @@ router.post(
             desc,
             benefit,
             promo_price,
+            tel_group,
+            approved: false,
             course_assets: {
               url: urlPath,
               path: filePath,
@@ -224,10 +233,7 @@ router.post(
 
 router.post(
   '/:course_id/tambahan',
-  [
-    param('course_id', 'course id should be present').exists(),
-    query('tel_group', 'tel group should be present').exists(),
-  ],
+  [param('course_id', 'course id should be present').exists()],
   isAllow,
   async (req, res) => {
     const errors = validationResult(req);
@@ -237,7 +243,6 @@ router.post(
 
     const { user } = res.locals;
     const { course_id } = req.params;
-    const { tel_group } = req.query;
 
     if (user.type !== 'teacher') {
       return res.status(400).json(response(400, 'Anda tidak terdaftar sebagai mentor'));
@@ -248,10 +253,6 @@ router.post(
     if (!kursus) {
       return res.status(400).json(response(400, 'kursus tidak di temukan!'));
     }
-
-    await kursus.update({
-      tel_group,
-    });
 
     uploads(req, res, async function (error) {
       if (error instanceof multer.MulterError) {
@@ -300,6 +301,7 @@ router.get('/', [query('from', 'from must be present').exists()], async (req, re
     const kursus = await Course.findAll({
       where: {
         id: { [Op.gt]: from },
+        approved: true,
       },
       attributes: { exclude: ['createdAt', 'updatedAt'] },
       limit: 9,

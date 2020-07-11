@@ -354,6 +354,10 @@ router.get('/rekomendasi', isAllow, async (req, res) => {
             as: 'course_assets',
             attributes: ['url'],
           },
+          {
+            model: Content,
+            required: true,
+          },
         ],
       },
     });

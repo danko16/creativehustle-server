@@ -26,6 +26,9 @@ const isAllow = async (req, res, next) => {
       user = await Student.findOne({ where: { id: decoded.uid } });
     } else if (decoded.type === 'teacher') {
       user = await Teacher.findOne({ where: { id: decoded.uid } });
+      if (!user.approved) {
+        return res.status(401).json({ status: 401, message: 'please wait for approval' });
+      }
     }
 
     if (!user) {

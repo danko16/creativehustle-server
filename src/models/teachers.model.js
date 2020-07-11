@@ -48,6 +48,10 @@ module.exports = function (sequelize, DataTypes) {
         allowNull: false,
         type: DataTypes.DATE,
       },
+      approved: {
+        allowNull: false,
+        type: DataTypes.BOOLEAN,
+      },
       createdAt: {
         allowNull: false,
         type: DataTypes.DATE,

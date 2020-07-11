@@ -105,6 +105,7 @@ router.post(
             password: encrypt(password),
             is_active: false,
             last_login: Date.now(),
+            approved: false,
             provider: 'local',
           })
         );

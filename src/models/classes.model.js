@@ -41,6 +41,10 @@ module.exports = function (sequelize, DataTypes) {
         allowNull: true,
         type: DataTypes.STRING,
       },
+      approved: {
+        allowNull: false,
+        type: DataTypes.BOOLEAN,
+      },
       createdAt: {
         allowNull: false,
         type: DataTypes.DATE,
