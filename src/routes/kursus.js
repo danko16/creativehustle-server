@@ -390,4 +390,59 @@ router.get(
   }
 );
 
+router.get('/cari', [query('keywords', 'keywords should be presents')], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json(response(422, errors.array()));
+  }
+
+  const { keywords } = req.query;
+
+  try {
+    const kursus = await Course.findAll({
+      where: {
+        title: { [Op.like]: `%${keywords}%` },
+      },
+      attributes: { exclude: ['createdAt', 'updatedAt'] },
+      limit: 9,
+      include: [
+        {
+          model: Asset,
+          as: 'course_assets',
+          attributes: ['url'],
+          where: {
+            type: 'thumbnail',
+          },
+        },
+        {
+          model: Teacher,
+          attributes: ['full_name'],
+        },
+        {
+          model: Content,
+          required: true,
+        },
+      ],
+    }).map((el) => el.get({ plain: true }));
+
+    const courses = [];
+    for (let i = 0; i < kursus.length; i++) {
+      courses.push({
+        id: kursus[i].id,
+        teacher_id: kursus[i].teacher_id,
+        title: kursus[i].title,
+        desc: kursus[i].desc,
+        benefit: JSON.parse(kursus[i].benefit),
+        price: kursus[i].price,
+        promo_price: kursus[i].promo_price,
+        teacher_name: kursus[i].teacher.full_name,
+        thumbnail: kursus[i].course_assets.url,
+      });
+    }
+    return res.status(200).json(response(200, 'Berhasil mendapatkan Kursus', courses));
+  } catch (error) {
+    return res.status(500).json(response(500, 'Internal Server Error!', error));
+  }
+});
+
 module.exports = router;

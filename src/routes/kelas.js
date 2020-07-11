@@ -316,4 +316,83 @@ router.get('/', [query('from', 'from must be present').exists()], async (req, re
   }
 });
 
+router.get('/cari', [query('keywords', 'keywords must be present').exists()], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json(response(422, errors.array()));
+  }
+  const { keywords } = req.query;
+
+  try {
+    const kelas = await Kelas.findAll({
+      where: {
+        title: { [Op.like]: `%${keywords}%` },
+      },
+      attributes: { exclude: ['createdAt', 'updatedAt'] },
+      limit: 9,
+      include: [
+        {
+          model: Asset,
+          as: 'class_assets',
+          attributes: ['url'],
+          where: {
+            type: 'thumbnail',
+          },
+        },
+        {
+          model: Teacher,
+          attributes: ['full_name'],
+        },
+        {
+          model: ClassSchedule,
+          attributes: { exclude: ['createdAt', 'updatedAt'] },
+        },
+      ],
+    }).map((el) => el.get({ plain: true }));
+
+    const classes = [];
+    for (let i = 0; i < kelas.length; i++) {
+      const schedules = kelas[i].class_schedules;
+      schedules.sort((a, b) => {
+        const aDate = a.date.split('-');
+        const bDate = b.date.split('-');
+        const startDate = new Date(aDate[2], aDate[1], aDate[0]);
+        const endDate = new Date(bDate[2], bDate[1], bDate[0]);
+        if (a.link) {
+          delete a.link;
+        }
+        if (a.password) {
+          delete a.password;
+        }
+        if (b.link) {
+          delete b.link;
+        }
+        if (b.password) {
+          delete b.password;
+        }
+
+        return startDate - endDate;
+      });
+
+      classes.push({
+        id: kelas[i].id,
+        teacher_id: kelas[i].teacher_id,
+        title: kelas[i].title,
+        desc: kelas[i].desc,
+        start_date: schedules[0],
+        end_date: schedules[schedules.length - 1],
+        sections: JSON.parse(kelas[i].sections),
+        price: kelas[i].price,
+        promo_price: kelas[i].promo_price,
+        teacher_name: kelas[i].teacher.full_name,
+        thumbnail: kelas[i].class_assets.url,
+      });
+    }
+
+    return res.status(200).json(response(200, 'Berhasil mendapatkan kelas', classes));
+  } catch (error) {
+    return res.status(500).json(response(500, 'Internal Server Error!', error));
+  }
+});
+
 module.exports = router;
