@@ -82,6 +82,10 @@ module.exports = function (sequelize, DataTypes) {
       foreignKey: 'class_id',
       onDelete: 'CASCADE',
     });
+
+    Classes.hasMany(models.invoices, {
+      foreignKey: 'class_id',
+    });
   };
 
   return Classes;
