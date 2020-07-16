@@ -33,5 +33,6 @@ app.use('/kursus', require('./routes/kursus'));
 app.use('/kursus-saya', require('./routes/kursus-saya'));
 app.use('/kelas', require('./routes/kelas'));
 app.use('/kelas-saya', require('./routes/kelas-saya'));
+app.use('/cart', require('./routes/cart'));
 
 module.exports = app;
