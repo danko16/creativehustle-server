@@ -17,25 +17,19 @@ module.exports = function (sequelize, DataTypes) {
           key: 'id',
         },
       },
-      course_id: {
-        foreignKey: true,
+      courses_id: {
         allowNull: true,
-        type: DataTypes.INTEGER,
-        references: {
-          model: 'courses',
-          key: 'id',
-        },
+        type: DataTypes.TEXT,
       },
-      class_id: {
-        foreignKey: true,
+      classes_id: {
         allowNull: true,
-        type: DataTypes.INTEGER,
-        references: {
-          model: 'classes',
-          key: 'id',
-        },
+        type: DataTypes.TEXT,
       },
       date: {
+        allowNull: false,
+        type: DataTypes.DATE,
+      },
+      expired: {
         allowNull: false,
         type: DataTypes.DATE,
       },
@@ -44,19 +38,19 @@ module.exports = function (sequelize, DataTypes) {
         type: DataTypes.INTEGER,
       },
       account_destination: {
-        allowNull: false,
+        allowNull: true,
         type: DataTypes.STRING,
       },
       bank_destination: {
-        allowNull: false,
+        allowNull: true,
         type: DataTypes.STRING,
       },
       sender_account_name: {
-        allowNull: false,
+        allowNull: true,
         type: DataTypes.STRING,
       },
       additional_message: {
-        allowNull: false,
+        allowNull: true,
         type: DataTypes.TEXT,
       },
       status: {
@@ -78,14 +72,6 @@ module.exports = function (sequelize, DataTypes) {
   Invoices.associate = function (models) {
     Invoices.belongsTo(models.students, {
       foreignKey: 'student_id',
-    });
-
-    Invoices.belongsTo(models.courses, {
-      foreignKey: 'course_id',
-    });
-
-    Invoices.belongsTo(models.classes, {
-      foreignKey: 'class_id',
     });
 
     Invoices.hasOne(models.digital_assets, {

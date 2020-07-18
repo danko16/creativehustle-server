@@ -51,8 +51,8 @@ router.get('/', isAllow, async (req, res) => {
         });
 
         if (course.promo_price) {
-          totalPrice += course.promo_price;
-          totalPromoPrice += course.price;
+          totalPrice += course.price;
+          totalPromoPrice += course.promo_price;
         } else {
           totalPrice += course.price;
         }
@@ -88,8 +88,8 @@ router.get('/', isAllow, async (req, res) => {
         });
 
         if (kelas.promo_price) {
-          totalPrice += kelas.promo_price;
-          totalPromoPrice += kelas.price;
+          totalPrice += kelas.price;
+          totalPromoPrice += kelas.promo_price;
         } else {
           totalPrice += kelas.price;
         }
@@ -109,7 +109,7 @@ router.get('/', isAllow, async (req, res) => {
     }
 
     if (totalPromoPrice !== 0) {
-      percentage = ((totalPromoPrice - totalPrice) / totalPromoPrice) * 100;
+      percentage = ((totalPrice - totalPromoPrice) / totalPrice) * 100;
     }
 
     const prices = {

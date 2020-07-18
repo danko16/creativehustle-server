@@ -83,10 +83,6 @@ module.exports = function (sequelize, DataTypes) {
       onDelete: 'CASCADE',
     });
 
-    Classes.hasMany(models.invoices, {
-      foreignKey: 'class_id',
-    });
-
     Classes.hasMany(models.carts, {
       foreignKey: 'class_id',
       onDelete: 'CASCADE',
