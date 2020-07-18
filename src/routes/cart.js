@@ -48,7 +48,8 @@ router.get('/', isAllow, async (req, res) => {
         });
 
         payload.push({
-          id: course.id,
+          cart_id: carts[i].id,
+          course_id: course.id,
           type: 'course',
           teacher_id: course.teacher_id,
           title: course.title,
@@ -76,7 +77,8 @@ router.get('/', isAllow, async (req, res) => {
           ],
         });
         payload.push({
-          id: kelas.id,
+          cart_id: carts[i].id,
+          class_id: kelas.id,
           type: 'class',
           teacher_id: kelas.teacher_id,
           title: kelas.title,
@@ -106,8 +108,9 @@ router.post('/', isAllow, async (req, res) => {
   }
 
   try {
+    let cart;
     if (course_id) {
-      let cart = await Cart.findOne({ where: { student_id: user.id, course_id } });
+      cart = await Cart.findOne({ where: { student_id: user.id, course_id } });
 
       if (cart) {
         return res.status(400).json(response(400, 'Kursus sudah ditambahkan di cart'));
@@ -123,7 +126,7 @@ router.post('/', isAllow, async (req, res) => {
         course_id,
       });
     } else if (class_id) {
-      let cart = await Cart.findOne({ where: { student_id: user.id, class_id } });
+      cart = await Cart.findOne({ where: { student_id: user.id, class_id } });
       if (cart) {
         return res.status(400).json(response(400, 'Kelas sudah ditambahkan di cart'));
       }
@@ -139,8 +142,7 @@ router.post('/', isAllow, async (req, res) => {
       });
     }
 
-    const payload = await Cart.findAll({ where: { student_id: user.id } });
-    return res.status(200).json(response(200, 'Berhasil Menambahkan Cart', payload));
+    return res.status(200).json(response(200, 'Berhasil Menambahkan Cart', cart));
   } catch (error) {
     return res.status(500).json(response(500, 'Internal Server Error!', error));
   }
@@ -172,9 +174,8 @@ router.delete(
           id: cart_id,
         },
       });
-      const payload = await Cart.findAll({ where: { student_id: user.id } });
 
-      return res.status(200).json(response(200, 'Berhasil Menghapus Cart', payload));
+      return res.status(200).json(response(200, 'Berhasil Menghapus Cart', cart));
     } catch (error) {
       return res.status(500).json(response(500, 'Internal Server Error!', error));
     }
