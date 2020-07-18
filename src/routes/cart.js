@@ -24,7 +24,10 @@ router.get('/', isAllow, async (req, res) => {
       where: { student_id: user.id },
     });
 
-    const payload = [];
+    const carts_payload = [];
+    let totalPrice = 0,
+      totalPromoPrice = 0,
+      percentage = 0;
     for (let i = 0; i < carts.length; i++) {
       const { course_id, class_id } = carts[i];
       if (course_id) {
@@ -47,7 +50,14 @@ router.get('/', isAllow, async (req, res) => {
           ],
         });
 
-        payload.push({
+        if (course.promo_price) {
+          totalPrice += course.promo_price;
+          totalPromoPrice += course.price;
+        } else {
+          totalPrice += course.price;
+        }
+
+        carts_payload.push({
           cart_id: carts[i].id,
           course_id: course.id,
           type: 'course',
@@ -76,7 +86,15 @@ router.get('/', isAllow, async (req, res) => {
             },
           ],
         });
-        payload.push({
+
+        if (kelas.promo_price) {
+          totalPrice += kelas.promo_price;
+          totalPromoPrice += kelas.price;
+        } else {
+          totalPrice += kelas.price;
+        }
+
+        carts_payload.push({
           cart_id: carts[i].id,
           class_id: kelas.id,
           type: 'class',
@@ -89,7 +107,23 @@ router.get('/', isAllow, async (req, res) => {
         });
       }
     }
-    return res.status(200).json(response(200, 'Berhasil Mendapatkan Cart', payload));
+
+    if (totalPromoPrice !== 0) {
+      percentage = ((totalPromoPrice - totalPrice) / totalPromoPrice) * 100;
+    }
+
+    const prices = {
+      total_price: totalPrice,
+      total_promo_price: totalPromoPrice,
+      percentage,
+    };
+
+    return res.status(200).json(
+      response(200, 'Berhasil Mendapatkan Cart', {
+        carts_payload,
+        prices,
+      })
+    );
   } catch (error) {
     return res.status(500).json(response(500, 'Internal Server Error!', error));
   }
