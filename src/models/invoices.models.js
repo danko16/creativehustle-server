@@ -45,6 +45,11 @@ module.exports = function (sequelize, DataTypes) {
         allowNull: true,
         type: DataTypes.STRING,
       },
+      sender_account: {
+        allowNull: true,
+        type: DataTypes.STRING,
+      },
+
       sender_account_name: {
         allowNull: true,
         type: DataTypes.STRING,

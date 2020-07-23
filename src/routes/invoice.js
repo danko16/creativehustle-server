@@ -34,6 +34,7 @@ router.get(
             'updatedAt',
             'account_destination',
             'bank_destination',
+            'sender_account',
             'sender_account_name',
             'additional_message',
           ],
@@ -142,9 +143,11 @@ router.post(
 
     try {
       let totalPrice = 0,
-        totalPromoPrice = 0;
+        totalPromoPrice = 0,
+        percentage = 0;
       const courses_invoice_id = [],
-        classes_invoice_id = [];
+        classes_invoice_id = [],
+        carts_payload = [];
       if (courses_id.length) {
         const courses = await Course.findAll({ where: { id: courses_id } });
         if (!courses.length) {
@@ -153,6 +156,13 @@ router.post(
 
         for (let i = 0; i < courses.length; i++) {
           courses_invoice_id.push(courses[i].id);
+          carts_payload.push({
+            course_id: courses[i].id,
+            title: courses[i].title,
+            price: courses[i].price,
+            type: 'course',
+          });
+
           if (courses[i].promo_price) {
             totalPrice += courses[i].price;
             totalPromoPrice += courses[i].promo_price;
@@ -170,6 +180,13 @@ router.post(
 
         for (let i = 0; i < classes.length; i++) {
           classes_invoice_id.push(classes[i].id);
+          carts_payload.push({
+            course_id: classes[i].id,
+            title: classes[i].title,
+            price: classes[i].price,
+            type: 'class',
+          });
+
           if (classes[i].promo_price) {
             totalPrice += classes[i].price;
             totalPromoPrice += classes[i].promo_price;
@@ -179,35 +196,47 @@ router.post(
         }
       }
 
-      let invoice = await Invoice.findOne({ where: { status: 'unpaid', student_id: user.id } });
-
       const expired = new Date();
       const aWeek = 1000 * 60 * 60 * 24 * 7;
       expired.setTime(expired.getTime() + aWeek);
-      if (invoice) {
-        await invoice.update({
-          date: Date.now(),
-          expired,
-          pay_amount: totalPromoPrice !== 0 ? totalPromoPrice : totalPrice,
-          status: 'unpaid',
-          courses_id: courses_invoice_id.length ? JSON.stringify(courses_invoice_id) : null,
-          classes_id: classes_invoice_id.length ? JSON.stringify(classes_invoice_id) : null,
-        });
-      } else {
-        invoice = await Invoice.create({
-          student_id: user.id,
-          date: Date.now(),
-          expired,
-          pay_amount: totalPromoPrice !== 0 ? totalPromoPrice : totalPrice,
-          status: 'unpaid',
-          courses_id: courses_invoice_id.length ? JSON.stringify(courses_invoice_id) : null,
-          classes_id: classes_invoice_id.length ? JSON.stringify(classes_invoice_id) : null,
-        });
+      let invoice = await Invoice.create({
+        student_id: user.id,
+        date: Date.now(),
+        expired,
+        pay_amount: totalPromoPrice !== 0 ? totalPromoPrice : totalPrice,
+        status: 'unpaid',
+        courses_id: courses_invoice_id.length ? JSON.stringify(courses_invoice_id) : null,
+        classes_id: classes_invoice_id.length ? JSON.stringify(classes_invoice_id) : null,
+      });
+
+      if (totalPromoPrice !== 0) {
+        percentage = ((totalPrice - totalPromoPrice) / totalPrice) * 100;
       }
+
+      const prices = {
+        total_price: totalPrice,
+        total_promo_price: totalPromoPrice,
+        percentage,
+      };
+
+      invoice = await Invoice.findOne({
+        where: { id: invoice.id },
+        attributes: {
+          exclude: [
+            'createdAt',
+            'updatedAt',
+            'account_destination',
+            'bank_destination',
+            'sender_account',
+            'sender_account_name',
+            'additional_message',
+          ],
+        },
+      });
 
       return res
         .status(200)
-        .json(response(200, 'Berhasil menambahkan invoice!', { invoice_id: invoice.id }));
+        .json(response(200, 'Berhasil menambahkan invoice!', { carts_payload, prices, invoice }));
     } catch (error) {
       return res.status(500).json(response(500, 'Internal Server Error!', error));
     }
