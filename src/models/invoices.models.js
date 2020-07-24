@@ -34,6 +34,10 @@ module.exports = function (sequelize, DataTypes) {
         type: DataTypes.DATE,
       },
       pay_amount: {
+        allowNull: true,
+        type: DataTypes.INTEGER,
+      },
+      total_amount: {
         allowNull: false,
         type: DataTypes.INTEGER,
       },
@@ -49,10 +53,13 @@ module.exports = function (sequelize, DataTypes) {
         allowNull: true,
         type: DataTypes.STRING,
       },
-
       sender_account_name: {
         allowNull: true,
         type: DataTypes.STRING,
+      },
+      pay_date: {
+        allowNull: true,
+        type: DataTypes.DATE,
       },
       additional_message: {
         allowNull: true,

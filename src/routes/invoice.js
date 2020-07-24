@@ -1,10 +1,37 @@
 const express = require('express');
-const { courses: Course, classes: Kelas, invoices: Invoice } = require('../models');
-const { body, param, validationResult } = require('express-validator');
+const {
+  students: Student,
+  courses: Course,
+  classes: Kelas,
+  invoices: Invoice,
+  digital_assets: Asset,
+} = require('../models');
+const { body, query, param, validationResult } = require('express-validator');
+const fs = require('fs');
+const multer = require('multer');
 const {
   auth: { isAllow },
   response,
 } = require('../utils');
+const config = require('../../config');
+
+const documentsStorage = multer.diskStorage({
+  destination: config.documents,
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + '.' + file.mimetype.split('/')[1]);
+  },
+});
+
+const upload = multer({
+  storage: documentsStorage,
+  limits: { fileSize: 5000000, files: 2 },
+  fileFilter: async function (req, file, cb) {
+    // if (!req.body.type) {
+    //   cb(new Error('Type need to be specified'));
+    // }
+    cb(null, true);
+  },
+}).single('file');
 
 const router = express.Router();
 
@@ -199,15 +226,41 @@ router.post(
       const expired = new Date();
       const aWeek = 1000 * 60 * 60 * 24 * 7;
       expired.setTime(expired.getTime() + aWeek);
-      let invoice = await Invoice.create({
-        student_id: user.id,
-        date: Date.now(),
-        expired,
-        pay_amount: totalPromoPrice !== 0 ? totalPromoPrice : totalPrice,
-        status: 'unpaid',
-        courses_id: courses_invoice_id.length ? JSON.stringify(courses_invoice_id) : null,
-        classes_id: classes_invoice_id.length ? JSON.stringify(classes_invoice_id) : null,
+      let invoice = await Invoice.findOne({
+        where: { student_id: user.id, status: 'unpaid' },
+        attributes: {
+          exclude: [
+            'createdAt',
+            'updatedAt',
+            'account_destination',
+            'bank_destination',
+            'sender_account',
+            'sender_account_name',
+            'additional_message',
+          ],
+        },
       });
+      if (invoice) {
+        await invoice.update({
+          student_id: user.id,
+          date: Date.now(),
+          expired,
+          total_amount: totalPromoPrice !== 0 ? totalPromoPrice : totalPrice,
+          status: 'unpaid',
+          courses_id: courses_invoice_id.length ? JSON.stringify(courses_invoice_id) : null,
+          classes_id: classes_invoice_id.length ? JSON.stringify(classes_invoice_id) : null,
+        });
+      } else {
+        await Invoice.create({
+          student_id: user.id,
+          date: Date.now(),
+          expired,
+          total_amount: totalPromoPrice !== 0 ? totalPromoPrice : totalPrice,
+          status: 'unpaid',
+          courses_id: courses_invoice_id.length ? JSON.stringify(courses_invoice_id) : null,
+          classes_id: classes_invoice_id.length ? JSON.stringify(classes_invoice_id) : null,
+        });
+      }
 
       if (totalPromoPrice !== 0) {
         percentage = ((totalPrice - totalPromoPrice) / totalPrice) * 100;
@@ -240,6 +293,131 @@ router.post(
     } catch (error) {
       return res.status(500).json(response(500, 'Internal Server Error!', error));
     }
+  }
+);
+
+router.post(
+  '/confirm',
+  [
+    query('name', 'name must be present').exists(),
+    query('email', 'email must be present').exists(),
+    query('pay_date', 'pay date must be present').exists(),
+    query('pay_amount', 'pay amount must be present').exists(),
+    query('bank_destination', 'bank destination must be present').exists(),
+    query('sender_account_name', 'sender account name must be present').exists(),
+    query('sender_account', 'sender account must be present').exists(),
+    query('invoice_id', 'invoice id must be present').exists(),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json(response(422, errors.array()));
+    }
+
+    const {
+      email,
+      pay_date,
+      pay_amount,
+      bank_destination,
+      sender_account_name,
+      sender_account,
+      invoice_id,
+      additional_message,
+    } = req.query;
+
+    const user = await Student.findOne({ where: { email }, exclude: { attributes: ['password'] } });
+
+    if (!user) {
+      return res.status(400).json(response(400, 'email anda belum terdaftar di sistem kami'));
+    }
+
+    const invoice = await Invoice.findOne({ where: { id: invoice_id, student_id: user.id } });
+    if (!invoice) {
+      return res.status(400).json(response(400, 'invoice tidak di temukan'));
+    }
+
+    if (invoice.status === 'paid') {
+      return res.status(400).json(response(400, 'anda sudah melakukan konfirmasi'));
+    } else if (invoice.status === 'canceled') {
+      return res.status(400).json(response(400, 'invoice telah di batalkan'));
+    }
+
+    upload(req, res, async (error) => {
+      if (error instanceof multer.MulterError) {
+        return res.status(500).json(response(500, 'Internal Server Error!', error));
+      } else if (error) {
+        return res.status(500).json(response(500, 'Unkonwn Error!', error));
+      }
+      try {
+        const { file } = req;
+        if (!file) {
+          return res.status(400).json(response(400, 'bukti pembayaran tidak boleh kosong'));
+        }
+
+        const servePath = `uploads/${file.filename}`;
+        const filePath = `${file.destination}/${file.filename}`;
+        const urlPath = `${config.serverDomain}/${servePath}`;
+        let accountDestination;
+        switch (bank_destination) {
+          case 'BNI':
+            accountDestination = '0722620388';
+            break;
+          case 'MANDIRI':
+            accountDestination = '1370016138576';
+            break;
+          case 'BTPN':
+            accountDestination = '90020619442';
+            break;
+        }
+
+        await invoice.update({
+          pay_date: new Date(pay_date),
+          pay_amount,
+          status: 'pending',
+          bank_destination,
+          account_destination: accountDestination,
+          sender_account_name,
+          sender_account,
+          additional_message,
+        });
+
+        const asset = await Asset.findOne({
+          where: { invoice_id: invoice.id, type: 'bukti_pembayaran' },
+          as: 'invoice_assets',
+        });
+
+        if (asset) {
+          if (asset.path) {
+            fs.unlinkSync(asset.path);
+          }
+          await asset.update({
+            url: urlPath,
+            path: filePath,
+            filename: file.filename,
+          });
+        } else {
+          await Asset.create({
+            invoice_id: invoice.id,
+            url: urlPath,
+            path: filePath,
+            filename: file.filename,
+            type: 'bukti_pembayaran',
+          });
+        }
+
+        return res
+          .status(200)
+          .json(
+            response(
+              200,
+              'Berhasil meminta konfirmasi silahkan tunggu maksimal 1 hari kerja terima kasih',
+              { ok: true }
+            )
+          );
+      } catch (error) {
+        return res.status(500).json(response(500, 'Internal Server Error!', error));
+      }
+    });
   }
 );
 
