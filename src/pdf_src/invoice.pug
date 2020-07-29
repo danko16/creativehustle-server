@@ -1,0 +1,276 @@
+doctype html
+head(style='box-sizing: border-box;')
+    meta(charset='UTF-8' style='box-sizing: border-box;')
+    meta(name='viewport' content='width=device-width, initial-scale=1.0' style='box-sizing: border-box;')
+    title(style='box-sizing: border-box;') Document
+    link(rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css' integrity='sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm' crossorigin='anonymous' style='box-sizing: border-box;')
+    link(href='https://fonts.googleapis.com/css2?family=Muli:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap' rel='stylesheet' style='box-sizing: border-box;')
+div(style='\
+max-width: 750px;\
+box-sizing: border-box;\
+font-family: "Muli", sans-serif;\
+font-size: 1rem;\
+font-weight: 400;\
+margin: 20px;\
+line-height: 1.5;\
+color: #5c6185;\
+')
+    .invoice(style='box-sizing: border-box; border: 1px solid #ccc; padding: 25px;')
+        div(style='text-align: center; box-sizing: border-box;')
+            img(src='https://api.creativehustle.id/uploads/creative-hustle.png' alt='logo' style='\
+            width: 280px;\
+            height: auto;\
+            box-sizing: border-box;\
+            vertical-align: middle;\
+            border-style: none;\
+            page-break-inside: avoid;\
+            ')
+            h3(style='\
+            margin: 18px 0px;\
+            box-sizing: border-box;\
+            margin-top: 1.2rem;\
+            margin-bottom: 1.2rem;\
+            font-family: inherit;\
+            font-weight: 500;\
+            line-height: 1.2;\
+            color: inherit;\
+            font-size: 1.75rem;\
+            orphans: 3;\
+            widows: 3;\
+            page-break-after: avoid;\
+            ')
+                | Invoice 
+                strong(style='box-sizing: border-box; font-weight: bolder;') ##{invoiceId}
+            .invoice-status(style='\
+            box-sizing: border-box;\
+            text-transform: uppercase;\
+            font-size: 24px;\
+            font-weight: 700;\
+            color: #000;\
+            ')
+                | Status: 
+                span.paid(style='box-sizing: border-box; color: #33bb37;') #{status}
+            span.small-text(style='box-sizing: border-box;')
+                | Terbit: #{created}
+                br(style='box-sizing: border-box;')
+                | Kadaluwarsa: #{expired}
+        hr(style='\
+        box-sizing: content-box;\
+        height: 0;\
+        overflow: visible;\
+        margin-top: 1rem;\
+        margin-bottom: 1rem;\
+        border: 0;\
+        border-top: 1px solid rgba(0, 0, 0, 0.1);\
+        ')
+        div(style='display: flex; flex-wrap: wrap; box-sizing: border-box;')
+            div(style='box-sizing: border-box;')
+                p(style='\
+                box-sizing: border-box;\
+                margin-top: 0;\
+                margin-bottom: 1rem;\
+                orphans: 3;\
+                widows: 3;\
+                ')
+                    strong(style='box-sizing: border-box; font-weight: bolder;') Ditagihkan kepada:
+                p(style='\
+                box-sizing: border-box;\
+                margin-top: 0;\
+                margin-bottom: 1rem;\
+                orphans: 3;\
+                widows: 3;\
+                ')
+                    | #{name}
+                    br(style='box-sizing: border-box;')
+                    | #{email}
+        div(style='box-sizing: border-box;')
+            p(style='\
+            box-sizing: border-box;\
+            margin-top: 0;\
+            margin-bottom: 1rem;\
+            orphans: 3;\
+            widows: 3;\
+            ')
+                strong(style='box-sizing: border-box; font-weight: bolder;') Dibayarkan kepada: 
+                br(style='box-sizing: border-box;')
+                span(style='box-sizing: border-box;') Salah satu rekening di bawah ini
+            div(style='\
+            display: flex;\
+            justify-content: space-between;\
+            flex-wrap: wrap;\
+            box-sizing: border-box;\
+            ')
+                p(style='\
+                box-sizing: border-box;\
+                margin-top: 0;\
+                margin-bottom: 1rem;\
+                orphans: 3;\
+                widows: 3;\
+                ')
+                    strong(style='box-sizing: border-box; font-weight: bolder;') BNI
+                    br(style='box-sizing: border-box;')
+                    | 0722620388
+                    br(style='box-sizing: border-box;')
+                    | Danang Eko Yudanto
+                p(style='\
+                box-sizing: border-box;\
+                margin-top: 0;\
+                margin-bottom: 1rem;\
+                orphans: 3;\
+                widows: 3;\
+                ')
+                    strong(style='box-sizing: border-box; font-weight: bolder;') MANDIRI
+                    br(style='box-sizing: border-box;')
+                    | 1370016138576
+                    br(style='box-sizing: border-box;')
+                    | Reezky Pradata Sanjaya
+                p(style='\
+                box-sizing: border-box;\
+                margin-top: 0;\
+                margin-bottom: 1rem;\
+                orphans: 3;\
+                widows: 3;\
+                ')
+                    strong(style='box-sizing: border-box; font-weight: bolder;') BTPN
+                    br(style='box-sizing: border-box;')
+                    | 90020619442
+                    br(style='box-sizing: border-box;')
+                    | Reezky Pradata Sanjaya
+        .panel.panel-default(style='box-sizing: border-box;')
+            .panel-heading(style='box-sizing: border-box;')
+                h3.panel-title(style='\
+                font-size: 22px;\
+                box-sizing: border-box;\
+                margin-top: 0;\
+                margin-bottom: 0.5rem;\
+                font-family: inherit;\
+                font-weight: 500;\
+                line-height: 1.2;\
+                color: inherit;\
+                orphans: 3;\
+                widows: 3;\
+                page-break-after: avoid;\
+                padding: 10px;\
+                ')
+                    strong(style='box-sizing: border-box; font-weight: bolder;') Invoice Items
+            .panel-body(style='box-sizing: border-box;')
+                .table-responsive(style='\
+                box-sizing: border-box;\
+                display: block;\
+                width: 100%;\
+                overflow-x: auto;\
+                -webkit-overflow-scrolling: touch;\
+                -ms-overflow-style: -ms-autohiding-scrollbar;\
+                ')
+                    table.table.table-condensed(style='\
+                    box-sizing: border-box;\
+                    border-collapse: collapse !important;\
+                    width: 100%;\
+                    max-width: 100%;\
+                    margin-bottom: 1rem;\
+                    background-color: transparent;\
+                    ')
+                        thead(style='box-sizing: border-box; display: table-header-group;')
+                            tr(style='box-sizing: border-box; page-break-inside: avoid;')
+                                td(style='\
+                                box-sizing: border-box;\
+                                padding: 0.75rem;\
+                                vertical-align: top;\
+                                border-top: 1px solid #dee2e6;\
+                                background-color: #fff !important;\
+                                ')
+                                    strong(style='box-sizing: border-box; font-weight: bolder;') Deskripsi
+                                td.text-center(width='20%' style='\
+                                box-sizing: border-box;\
+                                padding: 0.75rem;\
+                                vertical-align: top;\
+                                border-top: 1px solid #dee2e6;\
+                                text-align: center !important;\
+                                background-color: #fff !important;\
+                                ')
+                                    strong(style='box-sizing: border-box; font-weight: bolder;') Harga
+                        tbody(style='box-sizing: border-box;')
+                            each val in carts                                
+                                tr(style='box-sizing: border-box; page-break-inside: avoid;')
+                                    td(style='\
+                                    box-sizing: border-box;\
+                                    padding: 0.75rem;\
+                                    vertical-align: top;\
+                                    border-top: 1px solid #dee2e6;\
+                                    width: auto;\
+                                    background-color: #fff !important;\
+                                    ')
+                                        | #{val.name} - #{val.type} *
+                                    td.text-center(style='\
+                                    box-sizing: border-box;\
+                                    padding: 0.75rem;\
+                                    vertical-align: top;\
+                                    border-top: 1px solid #dee2e6;\
+                                    width: auto;\
+                                    text-align: center !important;\
+                                    background-color: #fff !important;\
+                                    ')
+                                        | Rp. #{val.price}
+                            tr(style='box-sizing: border-box; page-break-inside: avoid;')
+                                td.total-row.text-right(style='\
+                                box-sizing: border-box;\
+                                padding: 0.75rem;\
+                                vertical-align: top;\
+                                border-top: 1px solid #dee2e6;\
+                                width: auto;\
+                                text-align: right !important;\
+                                background-color: #fff !important;\
+                                ')
+                                    strong(style='box-sizing: border-box; font-weight: bolder;') Sub Total
+                                td.total-row.text-center(style='\
+                                box-sizing: border-box;\
+                                padding: 0.75rem;\
+                                vertical-align: top;\
+                                border-top: 1px solid #dee2e6;\
+                                width: auto;\
+                                text-align: center !important;\
+                                background-color: #fff !important;\
+                                ')
+                                    | Rp. #{subTotal}
+                            tr(style='box-sizing: border-box; page-break-inside: avoid;')
+                                td.total-row.text-right(style='\
+                                box-sizing: border-box;\
+                                padding: 0.75rem;\
+                                vertical-align: top;\
+                                border-top: 1px solid #dee2e6;\
+                                width: auto;\
+                                text-align: right !important;\
+                                background-color: #fff !important;\
+                                ')
+                                    strong(style='box-sizing: border-box; font-weight: bolder;') Diskon #{discountPercentage}%
+                                td.total-row.text-center(style='\
+                                box-sizing: border-box;\
+                                padding: 0.75rem;\
+                                vertical-align: top;\
+                                border-top: 1px solid #dee2e6;\
+                                width: auto;\
+                                text-align: center !important;\
+                                background-color: #fff !important;\
+                                ')
+                                    | Rp. #{discount}
+                            tr(style='box-sizing: border-box; page-break-inside: avoid;')
+                                td.total-row.text-right(style='\
+                                box-sizing: border-box;\
+                                padding: 0.75rem;\
+                                vertical-align: top;\
+                                border-top: 1px solid #dee2e6;\
+                                width: auto;\
+                                text-align: right !important;\
+                                background-color: #fff !important;\
+                                ')
+                                    strong(style='box-sizing: border-box; font-weight: bolder;') Total
+                                td.total-row.text-center(style='\
+                                box-sizing: border-box;\
+                                padding: 0.75rem;\
+                                vertical-align: top;\
+                                border-top: 1px solid #dee2e6;\
+                                width: auto;\
+                                text-align: center !important;\
+                                background-color: #fff !important;\
+                                ')
+                                    | Rp #{total}

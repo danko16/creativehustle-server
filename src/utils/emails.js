@@ -5,7 +5,7 @@ const transporter = nodemailer.createTransport(config.email);
 
 const emailSender = new Email({
   message: {
-    from: '"Creative Hustle Info" no-reply@creativehustle.id',
+    from: '"Creative Hustle" admin@creativehustle.id',
   },
   send: true,
   transport: transporter,
@@ -24,7 +24,8 @@ const sendPasswordReset = (data) => {
         preHeaderText: '',
         headerText: 'Hi, ' + data.name + '!',
         paragraph1: 'Seseorang telah meminta reset password untuk akun ini: ' + data.email + '.',
-        paragraph2: 'untuk mereset password anda silahkan klik tombol di bawah ini.',
+        paragraph2:
+          'jika benar anda yang melakukan permintaan reset password silahkan klik tombol di bawah ini. jika tidak silahkan abaikan email ini ',
         ctaLink: data.tokenUrl,
         ctaText: 'Reset Password',
       },
@@ -64,4 +65,47 @@ const sendActivationEmail = (data) => {
     });
 };
 
-module.exports = { sendPasswordReset, sendActivationEmail };
+const sendConfirmationEmail = (data) => {
+  // transporter.template
+  const email = new Email({
+    message: {
+      from: '"Creative Hustle" admin@creativehustle.id',
+      attachments: [
+        {
+          filename: data.filename,
+          path: data.path,
+        },
+      ],
+    },
+    send: true,
+    transport: transporter,
+  });
+
+  email
+    .send({
+      template: 'invoice',
+      message: {
+        to: data.email,
+      },
+      locals: {
+        subject: 'Konfirmasi Pembayaran Berhasil',
+        noInvoice: data.noInvoice,
+        userName: data.userName,
+        carts: data.carts,
+        discountPercentage: data.discountPercentage,
+        discountTotal: data.discountTotal,
+        total: data.total,
+        sender: data.sender,
+        receiver: data.receiver,
+      },
+    })
+    .then((res) => {
+      return true;
+    })
+    .catch((err) => {
+      console.log(err);
+      return false;
+    });
+};
+
+module.exports = { sendPasswordReset, sendActivationEmail, sendConfirmationEmail };

@@ -1,0 +1,144 @@
+doctype html
+head
+    meta(charset='UTF-8')
+    meta(name='viewport' content='width=device-width, initial-scale=1.0')
+    title Document
+.container(style="\
+background-color: #fff;\
+margin: 0 auto;\
+font-size: 16px;\
+font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Ubuntu', 'Open Sans',\
+'Helvetica Neue', sans-serif;\
+padding: 0 40px;\
+max-width: 750px;\
+")
+    .header(style='border-bottom: 1px solid #997cef;')
+        a(href='https://creativehustle.id' target='_blank')
+            img(alt="I'm an image" src='https://api.creativehustle.id/uploads/creative-hustle.png' style='\
+            width: 300px;\
+            margin-left: auto;\
+            display: block;\
+            margin-right: auto;\
+            padding: 40px;\
+            ')
+    .content(style='padding: 20px 0; margin-top: 25px;')
+        div(style='text-align: center; max-width: 400px; margin-left: auto; margin-right: auto;')
+            span(style='font-size: 30px; color: #2b303a;')
+                strong Konfirmasi Pembayaran
+            p(style='margin-top: 8px; font-size: 22px;') Invoice Nomor ##{noInvoice}
+            span(style='font-size: 30px; color: #6b6b6b;') Status Pembayaran : 
+            span(style='font-size: 30px; color: #00fc36; font-weight: 500;') LUNAS
+        div(style='color: #808389; margin-top: 40px;')
+            p(style='margin-bottom: 0;')
+                | Hi, #{userName}
+            p(style='margin-bottom: 0;')
+                | Terima kasih atas kepercayaan Anda melakukan pembelian di Creative Hustle.
+            p(style='margin-top: 8px;')
+                | kami telah melakukan konfirmasi terhadap pembayaran anda dan telah mengaktifkan kursus
+                | atau webinar yang anda beli,
+            p(style='margin-top: 30px;') Berikut detail pembelian anda
+            div(style='\
+            background-color: #dae4ff;\
+            border-top: 2px solid #008aff;\
+            padding: 2px 25px;\
+            color: #525252;\
+            ')
+                p Detail Pembelian
+            div(style='padding: 2px 25px;')
+                each val in carts
+                    div   
+                        p(style='font-size: 18px; margin-bottom: 0;')
+                            | #{val.name} - #{val.type}*
+                        p(style='color: #2097ff; font-size: 20px; margin-top: 8px;')
+                            | Rp. #{val.price}
+                p(style='font-size: 18px; margin-bottom: 0;')
+                    | Diskon #{discountPercentage}
+                p(style='color: #2097ff; font-size: 20px; margin-top: 8px;')
+                    | Rp. #{discountTotal}
+                div(style='border-bottom: 1px solid #008aff;')
+                p(style='font-size: 18px; margin-bottom: 0;')
+                    | Total
+                p(style='color: #2097ff; font-size: 20px; margin-top: 8px;')
+                    | Rp. #{total}
+            div(style='display: flex; padding: 20px 0;')
+                div
+                    p(style='padding-left: 5px;') Dibayarkan oleh
+                    p(style='\
+                    margin-top: 8px;\
+                    margin-bottom: 0;\
+                    color: #5d5d5d;\
+                    font-size: 16px;\
+                    font-weight: 500;\
+                    padding-left: 5px;\
+                    ')
+                        | No. Rekening: #{sender.account}
+                    p(style='\
+                    margin-top: 8px;\
+                    margin-bottom: 0;\
+                    color: #5d5d5d;\
+                    font-size: 16px;\
+                    font-weight: 500;\
+                    padding-left: 5px;\
+                    ')
+                        | Pengirim: #{sender.name}
+                div(style="margin-left: 40px;")
+                    p(style='padding-left: 5px;') Dibayarkan kepada
+                    p(style='\
+                    margin-top: 8px;\
+                    margin-bottom: 0;\
+                    color: #5d5d5d;\
+                    font-size: 16px;\
+                    font-weight: 500;\
+                    padding-left: 5px;\
+                    ')
+                        | No. Rekening: #{receiver.account}
+                    p(style='\
+                    margin-top: 8px;\
+                    margin-bottom: 0;\
+                    color: #5d5d5d;\
+                    font-size: 16px;\
+                    font-weight: 500;\
+                    padding-left: 5px;\
+                    ')
+                        | Penerima: #{receiver.name}
+            a(href='https://creativehustle.id' style='\
+            display: block;\
+            text-align: center;\
+            margin-top: 50px;\
+            margin-left: auto;\
+            margin-right: auto;\
+            margin-bottom: 30px;\
+            text-decoration: none;\
+            background-color: #309aff;\
+            padding: 25px 50px;\
+            border-radius: 40px;\
+            font-size: 18px;\
+            max-width: 150px;\
+            font-weight: 600;\
+            color: #fff;\
+            ' target='__blank') Langsung Belajar
+    .footer(style='background-color: #5676ca; padding: 40px;')
+        div(style='\
+        font-family: sans-serif;\
+        text-align: center;\
+        padding: 10px 0;\
+        color: #fff;\
+        font-weight: 600;\
+        font-size: 20px;\
+        ')
+            | Temukan Kami
+        div(style='font-family: sans-serif; text-align: center; padding: 10px 0; color: #fff;')
+            img(src='https://img.icons8.com/fluent/48/000000/instagram-new.png')
+            img(src='https://img.icons8.com/cotton/48/000000/youtube.png')
+            img(src='https://img.icons8.com/fluent/48/000000/twitter.png')
+            img(src='https://img.icons8.com/officel/48/000000/whatsapp.png')
+        div(style='font-family: sans-serif; text-align: center; padding: 10px 0; color: #fff;')
+            | Puri Hutama Danguran, Klaten Selatan, Kota Klaten, Jawa Tengah 57425
+        div(style='\
+        font-family: sans-serif;\
+        text-align: center;\
+        padding: 10px 0;\
+        color: #fff;\
+        font-size: 18px;\
+        ')
+            | &copy; 2020 creativehustle.id

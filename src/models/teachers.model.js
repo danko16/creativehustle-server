@@ -48,6 +48,14 @@ module.exports = function (sequelize, DataTypes) {
         allowNull: false,
         type: DataTypes.DATE,
       },
+      job: {
+        allowNull: false,
+        type: DataTypes.STRING,
+      },
+      biography: {
+        allowNull: false,
+        type: DataTypes.TEXT,
+      },
       approved: {
         allowNull: false,
         type: DataTypes.BOOLEAN,

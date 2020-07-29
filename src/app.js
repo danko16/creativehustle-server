@@ -35,5 +35,6 @@ app.use('/kelas', require('./routes/kelas'));
 app.use('/kelas-saya', require('./routes/kelas-saya'));
 app.use('/cart', require('./routes/cart'));
 app.use('/invoice', require('./routes/invoice'));
+app.use('/admin', limitedAccess, require('./routes/admin'));
 
 module.exports = app;

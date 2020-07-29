@@ -1,6 +1,5 @@
 const express = require('express');
 const {
-  students: Student,
   courses: Course,
   classes: Kelas,
   invoices: Invoice,
@@ -13,10 +12,9 @@ const {
   auth: { isAllow },
   response,
 } = require('../utils');
-const config = require('../../config');
 
 const documentsStorage = multer.diskStorage({
-  destination: config.documents,
+  destination: 'invoices/bukti_pembayaran',
   filename: function (req, file, cb) {
     cb(null, Date.now() + '.' + file.mimetype.split('/')[1]);
   },
@@ -34,6 +32,35 @@ const upload = multer({
 }).single('file');
 
 const router = express.Router();
+
+router.get('/', isAllow, async (req, res) => {
+  const { user } = res.locals;
+
+  if (user.type !== 'student') {
+    return res.status(400).json(response(400, 'Anda tidak terdaftar sebagai siswa'));
+  }
+
+  try {
+    const invoices = await Invoice.findAll({
+      where: { student_id: user.id },
+      order: [['date', 'DESC']],
+      attributes: {
+        exclude: [
+          'createdAt',
+          'updatedAt',
+          'account_destination',
+          'bank_destination',
+          'sender_account',
+          'sender_account_name',
+          'additional_message',
+        ],
+      },
+    });
+    return res.status(200).json(response(200, 'Berhasil Mendapatkan Invoices', invoices));
+  } catch (error) {
+    return res.status(500).json(response(500, 'Internal Server Error!', error));
+  }
+});
 
 router.get(
   '/:invoice_id',
@@ -121,15 +148,14 @@ router.get(
         percentage = ((totalPrice - totalPromoPrice) / totalPrice) * 100;
       }
 
-      const prices = {
+      const payload = {
         total_price: totalPrice,
         total_promo_price: totalPromoPrice,
         percentage,
+        ...invoice.get({ plain: true }),
+        carts: carts_payload,
       };
-
-      return res
-        .status(200)
-        .json(response(200, 'Berhasil mendapatkan invoice!', { carts_payload, prices, invoice }));
+      return res.status(200).json(response(200, 'Berhasil mendapatkan invoice!', payload));
     } catch (error) {
       return res.status(500).json(response(500, 'Internal Server Error!', error));
     }
@@ -251,7 +277,7 @@ router.post(
           classes_id: classes_invoice_id.length ? JSON.stringify(classes_invoice_id) : null,
         });
       } else {
-        await Invoice.create({
+        invoice = await Invoice.create({
           student_id: user.id,
           date: Date.now(),
           expired,
@@ -265,12 +291,6 @@ router.post(
       if (totalPromoPrice !== 0) {
         percentage = ((totalPrice - totalPromoPrice) / totalPrice) * 100;
       }
-
-      const prices = {
-        total_price: totalPrice,
-        total_promo_price: totalPromoPrice,
-        percentage,
-      };
 
       invoice = await Invoice.findOne({
         where: { id: invoice.id },
@@ -287,9 +307,15 @@ router.post(
         },
       });
 
-      return res
-        .status(200)
-        .json(response(200, 'Berhasil menambahkan invoice!', { carts_payload, prices, invoice }));
+      const payload = {
+        total_price: totalPrice,
+        total_promo_price: totalPromoPrice,
+        percentage,
+        ...invoice.get({ plain: true }),
+        carts: carts_payload,
+      };
+
+      return res.status(200).json(response(200, 'Berhasil menambahkan invoice!', payload));
     } catch (error) {
       return res.status(500).json(response(500, 'Internal Server Error!', error));
     }
@@ -298,6 +324,7 @@ router.post(
 
 router.post(
   '/confirm',
+  isAllow,
   [
     query('name', 'name must be present').exists(),
     query('email', 'email must be present').exists(),
@@ -315,7 +342,6 @@ router.post(
     }
 
     const {
-      email,
       pay_date,
       pay_amount,
       bank_destination,
@@ -325,10 +351,10 @@ router.post(
       additional_message,
     } = req.query;
 
-    const user = await Student.findOne({ where: { email }, exclude: { attributes: ['password'] } });
+    const { user } = res.locals;
 
-    if (!user) {
-      return res.status(400).json(response(400, 'email anda belum terdaftar di sistem kami'));
+    if (user.type !== 'student') {
+      return res.status(400).json(response(400, 'anda tidak terdaftar sebagai siswa'));
     }
 
     const invoice = await Invoice.findOne({ where: { id: invoice_id, student_id: user.id } });
@@ -354,9 +380,7 @@ router.post(
           return res.status(400).json(response(400, 'bukti pembayaran tidak boleh kosong'));
         }
 
-        const servePath = `uploads/${file.filename}`;
         const filePath = `${file.destination}/${file.filename}`;
-        const urlPath = `${config.serverDomain}/${servePath}`;
         let accountDestination;
         switch (bank_destination) {
           case 'BNI':
@@ -391,14 +415,12 @@ router.post(
             fs.unlinkSync(asset.path);
           }
           await asset.update({
-            url: urlPath,
             path: filePath,
             filename: file.filename,
           });
         } else {
           await Asset.create({
             invoice_id: invoice.id,
-            url: urlPath,
             path: filePath,
             filename: file.filename,
             type: 'bukti_pembayaran',
@@ -410,7 +432,7 @@ router.post(
           .json(
             response(
               200,
-              'Berhasil meminta konfirmasi silahkan tunggu maksimal 1 hari kerja terima kasih',
+              'Berhasil meminta konfirmasi silahkan tunggu maksimal 1 hari kerja, kami akan memberikan notifikasi melalu email anda terima kasih',
               { ok: true }
             )
           );

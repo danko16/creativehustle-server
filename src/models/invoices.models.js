@@ -86,7 +86,7 @@ module.exports = function (sequelize, DataTypes) {
       foreignKey: 'student_id',
     });
 
-    Invoices.hasOne(models.digital_assets, {
+    Invoices.hasMany(models.digital_assets, {
       foreignKey: 'invoice_id',
       as: 'invoice_assets',
     });
