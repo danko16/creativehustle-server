@@ -10,7 +10,7 @@ const {
   auth: { isAllow },
   response,
 } = require('../utils');
-const { param, validationResult } = require('express-validator');
+const { query, validationResult } = require('express-validator');
 
 const router = express.Router();
 
@@ -183,33 +183,44 @@ router.post('/', isAllow, async (req, res) => {
 });
 
 router.delete(
-  '/:cart_id',
+  '/',
   isAllow,
-  [param('cart_id', 'cart id should be present').exists()],
+  [query('type', 'type should be present').exists()],
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(422).json(response(422, errors.array()));
     }
     const { user } = res.locals;
-    const { cart_id } = req.params;
+    const { cart_id, type } = req.query;
 
     if (user.type !== 'student') {
       return res.status(400).json(response(400, 'Anda tidak terdaftar sebagai siswa'));
     }
 
     try {
-      const cart = await Cart.findOne({ where: { id: cart_id } });
-      if (!cart) {
-        return res.status(400).json(response(400, 'Cart tidak di temukan'));
+      if (type === 'single') {
+        if (!cart_id) {
+          return res.status(400).json(response(400, 'cart_id must be present'));
+        }
+        const cart = await Cart.findOne({ where: { id: cart_id } });
+        if (!cart) {
+          return res.status(400).json(response(400, 'Cart tidak di temukan'));
+        }
+        await Cart.destroy({
+          where: {
+            id: cart_id,
+          },
+        });
+      } else if (type === 'all') {
+        await Cart.destroy({
+          where: {
+            student_id: user.id,
+          },
+        });
       }
-      await Cart.destroy({
-        where: {
-          id: cart_id,
-        },
-      });
 
-      return res.status(200).json(response(200, 'Berhasil Menghapus Cart', cart));
+      return res.status(200).json(response(200, 'Berhasil Menghapus Cart', { ok: true }));
     } catch (error) {
       return res.status(500).json(response(500, 'Internal Server Error!', error));
     }

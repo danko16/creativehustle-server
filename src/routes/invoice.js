@@ -132,7 +132,7 @@ router.get(
             class_id: classes[i].id,
             title: classes[i].title,
             price: classes[i].price,
-            promo_price: courses[i].promo_price,
+            promo_price: classes[i].promo_price,
             type: 'class',
           });
           if (classes[i].promo_price) {
@@ -157,6 +157,7 @@ router.get(
       };
       return res.status(200).json(response(200, 'Berhasil mendapatkan invoice!', payload));
     } catch (error) {
+      console.log(error);
       return res.status(500).json(response(500, 'Internal Server Error!', error));
     }
   }
@@ -252,41 +253,16 @@ router.post(
       const expired = new Date();
       const aWeek = 1000 * 60 * 60 * 24 * 7;
       expired.setTime(expired.getTime() + aWeek);
-      let invoice = await Invoice.findOne({
-        where: { student_id: user.id, status: 'unpaid' },
-        attributes: {
-          exclude: [
-            'createdAt',
-            'updatedAt',
-            'account_destination',
-            'bank_destination',
-            'sender_account',
-            'sender_account_name',
-            'additional_message',
-          ],
-        },
+
+      let invoice = await Invoice.create({
+        student_id: user.id,
+        date: Date.now(),
+        expired,
+        total_amount: totalPromoPrice !== 0 ? totalPromoPrice : totalPrice,
+        status: 'unpaid',
+        courses_id: courses_invoice_id.length ? JSON.stringify(courses_invoice_id) : null,
+        classes_id: classes_invoice_id.length ? JSON.stringify(classes_invoice_id) : null,
       });
-      if (invoice) {
-        await invoice.update({
-          student_id: user.id,
-          date: Date.now(),
-          expired,
-          total_amount: totalPromoPrice !== 0 ? totalPromoPrice : totalPrice,
-          status: 'unpaid',
-          courses_id: courses_invoice_id.length ? JSON.stringify(courses_invoice_id) : null,
-          classes_id: classes_invoice_id.length ? JSON.stringify(classes_invoice_id) : null,
-        });
-      } else {
-        invoice = await Invoice.create({
-          student_id: user.id,
-          date: Date.now(),
-          expired,
-          total_amount: totalPromoPrice !== 0 ? totalPromoPrice : totalPrice,
-          status: 'unpaid',
-          courses_id: courses_invoice_id.length ? JSON.stringify(courses_invoice_id) : null,
-          classes_id: classes_invoice_id.length ? JSON.stringify(classes_invoice_id) : null,
-        });
-      }
 
       if (totalPromoPrice !== 0) {
         percentage = ((totalPrice - totalPromoPrice) / totalPrice) * 100;

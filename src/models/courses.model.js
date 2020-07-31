@@ -49,6 +49,14 @@ module.exports = function (sequelize, DataTypes) {
         allowNull: false,
         type: DataTypes.STRING,
       },
+      rating: {
+        allowNull: false,
+        type: DataTypes.TEXT,
+      },
+      participant: {
+        allowNull: false,
+        type: DataTypes.INTEGER,
+      },
       tel_group: {
         allowNull: true,
         type: DataTypes.STRING,

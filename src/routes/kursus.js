@@ -64,6 +64,9 @@ router.post(
     query('desc', 'description should present').exists(),
     query('benefit', 'benefit should present').exists(),
     query('price', 'price should present').exists(),
+    query('topics', 'topics should present').exists(),
+    query('level', 'level should present').exists(),
+    query('type', 'type should present').exists(),
   ],
   async (req, res) => {
     const errors = validationResult(req);
@@ -71,7 +74,7 @@ router.post(
       return res.status(422).json(response(422, errors.array()));
     }
     const { user } = res.locals;
-    const { title, price, desc, benefit, promo_price, tel_group } = req.query;
+    const { title, price, desc, benefit, promo_price, tel_group, topics, level, type } = req.query;
 
     if (user.type !== 'teacher') {
       return res.status(400).json(response(400, 'Anda tidak terdaftar sebagai mentor'));
@@ -99,6 +102,11 @@ router.post(
           .resize(420, 260)
           .toFile(filePath, (err, info) => {});
 
+        const rating = {
+          star: 0,
+          reviewer: 0,
+        };
+
         const kursus = await Course.create(
           {
             teacher_id: user.id,
@@ -108,6 +116,11 @@ router.post(
             benefit,
             promo_price,
             tel_group,
+            topics,
+            level,
+            type,
+            rating: JSON.stringify(rating),
+            participant: 0,
             approved: false,
             course_assets: {
               url: urlPath,
@@ -125,6 +138,11 @@ router.post(
           price,
           promo_price,
           desc,
+          topics,
+          level,
+          type,
+          rating,
+          participant: 0,
           benefit: JSON.parse(benefit),
           thumbnail: urlPath,
         });
@@ -316,7 +334,7 @@ router.get('/', [query('from', 'from must be present').exists()], async (req, re
         },
         {
           model: Teacher,
-          attributes: ['full_name'],
+          attributes: ['full_name', 'job', 'biography'],
         },
         {
           model: Content,
@@ -335,7 +353,14 @@ router.get('/', [query('from', 'from must be present').exists()], async (req, re
         benefit: JSON.parse(kursus[i].benefit),
         price: kursus[i].price,
         promo_price: kursus[i].promo_price,
+        topics: kursus[i].topics,
+        level: kursus[i].level,
+        type: kursus[i].type,
+        rating: JSON.parse(kursus[i].rating),
+        participant: kursus[i].participant,
         teacher_name: kursus[i].teacher.full_name,
+        teacher_job: kursus[i].teacher.job,
+        teacher_biography: kursus[i].teacher.biography,
         thumbnail: kursus[i].course_assets.url,
       });
     }

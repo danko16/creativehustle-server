@@ -40,6 +40,10 @@ router.get('/', isAllow, async (req, res) => {
               attributes: ['full_name'],
             },
             {
+              model: Content,
+              attributes: { exclude: ['createdAt', 'updatedAt'] },
+            },
+            {
               model: Asset,
               attributes: ['url'],
               as: 'course_assets',
@@ -52,17 +56,16 @@ router.get('/', isAllow, async (req, res) => {
     const kursusPayload = [];
     for (let i = 0; i < kursusSaya.length; i++) {
       const myCourse = kursusSaya[i].get('course', { plain: true });
-      const myContent = JSON.parse(kursusSaya[i].contents);
+      const myContent = myCourse.contents;
+      const done = JSON.parse(kursusSaya[i].done);
       let doneTotal = 0;
       let total = myContent.length;
 
-      for (let j = 0; j < myContent.length; j++) {
-        const { done } = myContent[j];
-
-        if (done) {
+      Object.keys(done).forEach((key) => {
+        if (done[key]) {
           doneTotal++;
         }
-      }
+      });
 
       const progress = Math.floor((doneTotal / total) * 100);
 
@@ -116,6 +119,10 @@ router.get(
                 attributes: { exclude: ['createdAt', 'updatedAt'] },
               },
               {
+                model: Content,
+                attributes: { exclude: ['createdAt', 'updatedAt'] },
+              },
+              {
                 model: ExtraMatter,
                 required: false,
                 attributes: { exclude: ['createdAt', 'updatedAt'] },
@@ -138,7 +145,9 @@ router.get(
         return res.status(400).json(response(400, 'anda tidak terdaftar kursus ini!'));
       }
 
-      const contents = myCourse.get('contents', { plain: true });
+      const contents = [];
+      const done = JSON.parse(myCourse.done);
+      const myContents = myCourse.course.get('contents', { plain: true });
       const sections = myCourse.course.get('sections', { plain: true });
       const materiTambahan = myCourse.course.get('extra_matters', { plain: true }).map((el) => ({
         id: el.id,
@@ -147,86 +156,23 @@ router.get(
         matter: el.extra_matter_assets.url,
       }));
 
+      myContents.forEach((content) => {
+        const [section] = sections.filter((val) => val.id === content.section_id);
+        contents.push({
+          ...content,
+          section_title: section.title,
+          done: done[content.id],
+        });
+      });
+
       return res.status(200).json(
         response(200, 'Berhasil Mendapatkan Contents', {
           sections,
-          contents: JSON.parse(contents),
+          contents,
           materi_tambahan: materiTambahan,
           tel_group: myCourse.course.tel_group,
         })
       );
-    } catch (error) {
-      return res.status(500).json(response(500, 'Internal Server Error!', error));
-    }
-  }
-);
-
-router.post(
-  '/subscribe',
-  isAllow,
-  [body('kursus_id', 'kursus id should be present').exists()],
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(422).json(response(422, errors.array()));
-    }
-
-    const { user } = res.locals;
-    const { kursus_id } = req.body;
-
-    if (user.type !== 'student') {
-      return res.status(400).json(response(400, 'Anda tidak terdaftar sebagai siswa'));
-    }
-
-    try {
-      const kursus = await Course.findOne({
-        where: { id: kursus_id },
-        include: [
-          {
-            model: Section,
-            attributes: { exclude: ['createdAt', 'updatedAt'] },
-          },
-          {
-            model: Content,
-            attributes: { exclude: ['createdAt', 'updatedAt'] },
-          },
-        ],
-      });
-
-      if (!kursus) {
-        return res.status(400).json(response(400, 'kursus tidak ditemukan'));
-      }
-
-      if (!kursus.sections.length) {
-        return res.status(400).json(response(400, 'kursus masih kosong'));
-      }
-
-      let kursusSaya = await MyCourse.findOne({
-        where: {
-          course_id: kursus.id,
-          student_id: user.id,
-        },
-      });
-
-      if (kursusSaya) {
-        return res.status(400).json(response(400, 'anda sudah subscribe kursus ini'));
-      }
-
-      const contents = kursus.get('contents', { plain: true });
-
-      const myContents = [];
-      for (let i = 0; i < contents.length; i++) {
-        const [section] = kursus.sections.filter((val) => val.id === contents[i].section_id);
-        myContents.push({ ...contents[i], section_title: section.title, done: false });
-      }
-
-      kursusSaya = await MyCourse.create({
-        course_id: kursus.id,
-        student_id: user.id,
-        contents: JSON.stringify(myContents),
-      });
-
-      return res.status(200).json(response(200, 'Berhasil Subscribe kursus'));
     } catch (error) {
       return res.status(500).json(response(500, 'Internal Server Error!', error));
     }
@@ -264,26 +210,21 @@ router.patch(
       }
 
       let isExist = false;
-      let myContents = JSON.parse(myCourse.contents);
-      myContents = myContents.map((val) => {
-        if (val.id === parseInt(content_id)) {
-          isExist = true;
-          return {
-            ...val,
-            done: true,
-          };
-        }
-        return val;
-      });
+      let done = JSON.parse(myCourse.done);
 
+      if (Object.keys(done).includes(`${content_id}`)) {
+        isExist = true;
+      }
       if (!isExist) {
         return res.status(400).json(response(400, 'konten tidak di temukan!'));
       }
+      done[content_id] = true;
       await myCourse.update({
-        contents: JSON.stringify(myContents),
+        done: JSON.stringify(done),
       });
-      return res.status(200).json(response(200, 'Status berhasil di ubah', myContents));
+      return res.status(200).json(response(200, 'Status berhasil di ubah', { ok: true }));
     } catch (error) {
+      console.log(error);
       return res.status(500).json(response(500, 'Internal Server Error!', error));
     }
   }

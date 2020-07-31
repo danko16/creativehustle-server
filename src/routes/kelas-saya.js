@@ -1,5 +1,5 @@
 const express = require('express');
-const { param, body, validationResult } = require('express-validator');
+const { param } = require('express-validator');
 const {
   classes: Kelas,
   my_classes: MyClass,
@@ -170,63 +170,6 @@ router.get(
         tel_group: kelas.tel_group,
       };
       return res.status(200).json(response(200, 'Berhasil mendapatkan jadwal', payload));
-    } catch (error) {
-      return res.status(500).json(response(500, 'Internal Server Error!', error));
-    }
-  }
-);
-
-router.post(
-  '/subscribe',
-  isAllow,
-  [body('class_id', 'class id should be present').exists()],
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(422).json(response(422, errors.array()));
-    }
-
-    const { user } = res.locals;
-    const { class_id } = req.body;
-
-    if (user.type !== 'student') {
-      return res.status(400).json(response(400, 'Anda tidak terdaftar sebagai siswa'));
-    }
-
-    try {
-      const kelas = await Kelas.findOne({
-        where: { id: class_id },
-        attributes: { exclude: ['createdAt', 'updatedAt'] },
-        include: {
-          model: ClassSchedule,
-          attributes: { exclude: ['createdAt', 'updatedAt'] },
-        },
-      });
-
-      if (!kelas) {
-        return res.status(400).json(response(400, 'Kelas tidak ditemukan'));
-      }
-
-      let kelasSaya = await MyClass.findOne({
-        where: {
-          class_id: kelas.id,
-          student_id: user.id,
-        },
-      });
-
-      if (kelasSaya) {
-        return res.status(400).json(response(400, 'anda sudah subscribe kelas ini'));
-      }
-
-      const schedules = kelas.get('class_schedules', { plain: true });
-
-      kelasSaya = await MyClass.create({
-        class_id: kelas.id,
-        student_id: user.id,
-        schedules: JSON.stringify(schedules),
-      });
-
-      return res.status(200).json(response(200, 'Berhasil subscribe kelas'));
     } catch (error) {
       return res.status(500).json(response(500, 'Internal Server Error!', error));
     }

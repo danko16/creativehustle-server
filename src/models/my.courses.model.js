@@ -26,7 +26,7 @@ module.exports = function (sequelize, DataTypes) {
           key: 'id',
         },
       },
-      contents: {
+      done: {
         allowNull: false,
         type: DataTypes.TEXT,
       },

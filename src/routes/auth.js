@@ -71,7 +71,7 @@ router.post(
       return res.status(422).json(response(422, errors.array()));
     }
 
-    const { full_name, email, password, type } = req.body;
+    const { full_name, email, password, type, job, biography } = req.body;
     try {
       let user;
       if (type === 'student') {
@@ -92,6 +92,9 @@ router.post(
           })
         );
       } else if (type === 'teacher') {
+        if (!job || !biography) {
+          return res.status(400).json(response(400, 'Job dan biografi tidak boleh kosong'));
+        }
         let teacher = await Teacher.findOne({ where: { email } });
 
         if (teacher) {
@@ -107,6 +110,8 @@ router.post(
             last_login: Date.now(),
             approved: false,
             provider: 'local',
+            job,
+            biography,
           })
         );
       }

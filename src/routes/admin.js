@@ -104,6 +104,14 @@ router.post(
       }
 
       if (status === 'paid') {
+        if (invoice.status === 'unpaid') {
+          return res.status(400).json(response(400, 'Invoice belum di konfirmasi'));
+        }
+
+        if (invoice.status === 'canceled') {
+          return res.status(400).json(response(400, 'Invoice sudah di batalkan'));
+        }
+
         let discountPercentage = 0,
           discountTotal = 0,
           total = 0,
@@ -157,18 +165,21 @@ router.post(
 
             if (!kursusSaya) {
               const contents = courses[i].get('contents', { plain: true });
-              const sections = courses[i].get('sections', { plain: true });
 
-              const myContents = [];
+              const done = {};
               for (let i = 0; i < contents.length; i++) {
-                const [section] = sections.filter((val) => val.id === contents[i].section_id);
-                myContents.push({ ...contents[i], section_title: section.title, done: false });
+                const { id } = contents[i];
+                done[id] = false;
               }
 
               kursusSaya = await MyCourse.create({
                 course_id,
                 student_id: invoice.student_id,
-                contents: JSON.stringify(myContents),
+                done: JSON.stringify(done),
+              });
+
+              await courses[i].update({
+                participant: courses[i].participant + 1,
               });
             }
           }
@@ -207,12 +218,9 @@ router.post(
             });
 
             if (!kelasSaya) {
-              const schedules = classes[i].get('class_schedules', { plain: true });
-
               kelasSaya = await MyClass.create({
                 class_id: classes[i].id,
                 student_id: invoice.student_id,
-                schedules: JSON.stringify(schedules),
               });
             }
           }
@@ -245,7 +253,7 @@ router.post(
           created: convertSlashDate(invoice.date),
           expired: convertSlashDate(invoice.expired),
           subTotal: formatNumber(total),
-          discountPercentage: `${discountPercentage}%`,
+          discountPercentage: `${Math.floor(discountPercentage)}`,
           discount: formatNumber(discountTotal),
           total: `${formatNumber(totalPromo ? totalPromo : total)}`,
         });
@@ -278,7 +286,7 @@ router.post(
           noInvoice: invoice.id,
           userName: student.full_name,
           carts,
-          discountPercentage: `${discountPercentage}%`,
+          discountPercentage: `${Math.floor(discountPercentage)}%`,
           discountTotal: `${formatNumber(discountTotal)}`,
           total: `${formatNumber(totalPromo ? totalPromo : total)}`,
           sender: {

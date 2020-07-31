@@ -63,6 +63,8 @@ router.post(
     query('desc', 'description should present').exists(),
     query('sections', 'sections should present').exists(),
     query('price', 'price should present').exists(),
+    query('type', 'type should present').exists(),
+    query('topics', 'topics should present').exists(),
   ],
   async (req, res) => {
     const errors = validationResult(req);
@@ -71,7 +73,7 @@ router.post(
     }
 
     const { user } = res.locals;
-    const { title, price, desc, sections, promo_price, tel_group } = req.query;
+    const { title, price, desc, sections, promo_price, tel_group, type, topics } = req.query;
 
     if (user.type !== 'teacher') {
       return res.status(400).json(response(400, 'anda tidak terdaftar sebagai mentor!'));
@@ -109,6 +111,8 @@ router.post(
             promo_price,
             tel_group,
             approved: false,
+            type,
+            topics,
             class_assets: {
               url: urlPath,
               path: filePath,
@@ -125,6 +129,8 @@ router.post(
           price,
           promo_price,
           desc,
+          type,
+          topics,
           sections: JSON.parse(sections),
           thumbnail: urlPath,
         });
@@ -264,7 +270,7 @@ router.get('/', [query('from', 'from must be present').exists()], async (req, re
         },
         {
           model: Teacher,
-          attributes: ['full_name'],
+          attributes: ['full_name', 'job', 'biography'],
         },
         {
           model: ClassSchedule,
@@ -308,7 +314,11 @@ router.get('/', [query('from', 'from must be present').exists()], async (req, re
         sections: JSON.parse(kelas[i].sections),
         price: kelas[i].price,
         promo_price: kelas[i].promo_price,
+        type: kelas[i].type,
+        topics: kelas[i].topics,
         teacher_name: kelas[i].teacher.full_name,
+        teacher_job: kelas[i].teacher.job,
+        teacher_biography: kelas[i].teacher.biography,
         thumbnail: kelas[i].class_assets.url,
       });
     }

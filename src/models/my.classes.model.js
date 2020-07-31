@@ -26,10 +26,6 @@ module.exports = function (sequelize, DataTypes) {
           key: 'id',
         },
       },
-      schedules: {
-        allowNull: false,
-        type: DataTypes.TEXT,
-      },
       createdAt: {
         allowNull: false,
         type: DataTypes.DATE,

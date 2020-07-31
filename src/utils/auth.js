@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const CryptoJS = require('crypto-js');
 const aes = require('crypto-js/aes');
-const { teachers: Teacher, students: Student } = require('../models');
+const { teachers: Teacher, students: Student, admins: Admin } = require('../models');
 const config = require('../../config');
 
 const isAllow = async (req, res, next) => {
@@ -30,7 +30,7 @@ const isAllow = async (req, res, next) => {
         return res.status(401).json({ status: 401, message: 'please wait for approval' });
       }
     } else if (decoded.type === 'admin') {
-      user = await Teacher.findOne({ where: { id: decoded.uid } });
+      user = await Admin.findOne({ where: { id: decoded.uid } });
       if (!user.approved) {
         return res.status(401).json({ status: 401, message: 'please wait for approval' });
       }
@@ -46,6 +46,7 @@ const isAllow = async (req, res, next) => {
     };
     next();
   } catch (error) {
+    console.log(error);
     return res.status(401).json({ status: 401, message: 'Something Wrong!', error });
   }
 };
