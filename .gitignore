@@ -117,4 +117,6 @@ lib/
 data/
 public/uploads
 public/documents
+invoices/bukti_pembayaran
+invoices/paid
 .env
