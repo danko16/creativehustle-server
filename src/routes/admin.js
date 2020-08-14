@@ -12,6 +12,7 @@ const {
   my_courses: MyCourse,
   my_classes: MyClass,
   sections: Section,
+  sequelize,
 } = require('../models');
 const {
   response,
@@ -87,6 +88,8 @@ router.post(
     if (user.type !== 'admin') {
       return res.status(400).json(response(400, 'Anda tidak terdaftar sebagai admin'));
     }
+
+    const transaction = await sequelize.transaction();
     try {
       const invoice = await Invoice.findOne({
         where: { id: invoice_id },
@@ -172,15 +175,21 @@ router.post(
                 done[id] = false;
               }
 
-              kursusSaya = await MyCourse.create({
-                course_id,
-                student_id: invoice.student_id,
-                done: JSON.stringify(done),
-              });
+              kursusSaya = await MyCourse.create(
+                {
+                  course_id,
+                  student_id: invoice.student_id,
+                  done: JSON.stringify(done),
+                },
+                { transaction }
+              );
 
-              await courses[i].update({
-                participant: courses[i].participant + 1,
-              });
+              await courses[i].update(
+                {
+                  participant: courses[i].participant + 1,
+                },
+                { transaction }
+              );
             }
           }
         }
@@ -218,10 +227,13 @@ router.post(
             });
 
             if (!kelasSaya) {
-              kelasSaya = await MyClass.create({
-                class_id: classes[i].id,
-                student_id: invoice.student_id,
-              });
+              kelasSaya = await MyClass.create(
+                {
+                  class_id: classes[i].id,
+                  student_id: invoice.student_id,
+                },
+                { transaction }
+              );
             }
           }
         }
@@ -271,12 +283,15 @@ router.post(
         await browser.close();
 
         if (!invoice.invoice_assets.length) {
-          await Asset.create({
-            invoice_id: invoice.id,
-            path: `invoices/paid/invoice#${invoice.id}.pdf`,
-            filename: `invoice#${invoice.id}.pdf`,
-            type: 'paid',
-          });
+          await Asset.create(
+            {
+              invoice_id: invoice.id,
+              path: `invoices/paid/invoice#${invoice.id}.pdf`,
+              filename: `invoice#${invoice.id}.pdf`,
+              type: 'paid',
+            },
+            { transaction }
+          );
         }
 
         sendConfirmationEmail({
@@ -300,7 +315,9 @@ router.post(
         });
       }
 
-      await invoice.update({ status });
+      await invoice.update({ status }, { transaction });
+
+      await transaction.commit();
 
       return res.status(200).json(
         response(200, 'Konfirmasi Pembayaran Berhasil', {
@@ -309,6 +326,7 @@ router.post(
         })
       );
     } catch (error) {
+      await transaction.rollback();
       return res.status(500).json(response(500, 'Internal server error'));
     }
   }
