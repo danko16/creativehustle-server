@@ -5,8 +5,10 @@ config.serverDomain = 'https://api.creativehustle.id';
 config.clientDomain = 'https://creativehustle.id';
 config.host = 'http://localhost';
 config.port = 3000;
-config.googleId = '446876581165-pbgrvmc4drv4jh81pp3dck34qgom2rac.apps.googleusercontent.com';
-config.googleSecret = 'L8pHU_jxJfC1BIJeA-Xz8rI5';
+config.googleId = process.env.PROD_GOOGLE_ID;
+config.googleSecret = process.env.PROD_GOOGLE_SECRET;
+config.jwtsecret = process.env.JWT_SECRET;
+config.aessecret = process.env.AES_SECRET;
 config.db = {
   username: process.env.PROD_USER,
   password: process.env.PROD_PASS,

@@ -7,6 +7,8 @@ config.host = 'http://localhost';
 config.port = 3000;
 config.googleId = '446876581165-gnrh6cf0en7b6s688clhneifviskctqe.apps.googleusercontent.com';
 config.googleSecret = 'teAq2syE55yMOSdWUcRalii7';
+config.jwtsecret = `YdU9pecapCfKi9sLdVwibLWyIZIKgSga2XS17gUewMSlRk6HV5lZ2uZFvpid`;
+config.aessecret = 'tYhIlnLAMRzs06pP3izXkuCn4mwA63Z8FpgXSFLwfy7p6FRozI08VCbfjhEh';
 config.db = {
   username: 'root',
   password: 'password',
