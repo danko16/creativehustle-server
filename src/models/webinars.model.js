@@ -1,6 +1,6 @@
 module.exports = function (sequelize, DataTypes) {
-  const Classes = sequelize.define(
-    'classes',
+  const Webinars = sequelize.define(
+    'webinars',
     {
       id: {
         type: DataTypes.INTEGER,
@@ -65,42 +65,42 @@ module.exports = function (sequelize, DataTypes) {
     { timestamps: true, underscored: true }
   );
 
-  Classes.associate = function (models) {
-    Classes.belongsTo(models.teachers, {
+  Webinars.associate = function (models) {
+    Webinars.belongsTo(models.teachers, {
       foreignKey: 'teacher_id',
     });
 
-    Classes.hasOne(models.digital_assets, {
-      foreignKey: 'class_id',
-      as: 'class_assets',
+    Webinars.hasOne(models.digital_assets, {
+      foreignKey: 'webinar_id',
+      as: 'webinar_assets',
       onDelete: 'CASCADE',
     });
 
-    Classes.hasMany(models.my_classes, {
-      foreignKey: 'class_id',
+    Webinars.hasMany(models.my_webinars, {
+      foreignKey: 'webinar_id',
       onDelete: 'CASCADE',
     });
 
-    Classes.hasMany(models.extra_matters, {
-      foreignKey: 'class_id',
+    Webinars.hasMany(models.extra_matters, {
+      foreignKey: 'webinar_id',
       onDelete: 'CASCADE',
     });
 
-    Classes.hasMany(models.class_schedules, {
-      foreignKey: 'class_id',
+    Webinars.hasMany(models.webinar_schedules, {
+      foreignKey: 'webinar_id',
       onDelete: 'CASCADE',
     });
 
-    Classes.hasMany(models.carts, {
-      foreignKey: 'class_id',
+    Webinars.hasMany(models.carts, {
+      foreignKey: 'webinar_id',
       onDelete: 'CASCADE',
     });
 
-    Classes.hasMany(models.coupons, {
-      foreignKey: 'class_id',
+    Webinars.hasMany(models.coupons, {
+      foreignKey: 'webinar_id',
       onDelete: 'CASCADE',
     });
   };
 
-  return Classes;
+  return Webinars;
 };

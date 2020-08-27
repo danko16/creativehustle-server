@@ -2,7 +2,7 @@ const express = require('express');
 const {
   carts: Cart,
   courses: Course,
-  classes: Kelas,
+  webinars: Webinar,
   teachers: Teacher,
   digital_assets: Asset,
 } = require('../models');
@@ -29,7 +29,7 @@ router.get('/', isAllow, async (req, res) => {
       totalPromoPrice = 0,
       percentage = 0;
     for (let i = 0; i < carts.length; i++) {
-      const { course_id, class_id } = carts[i];
+      const { course_id, webinar_id } = carts[i];
       if (course_id) {
         const course = await Course.findOne({
           where: { id: course_id },
@@ -52,7 +52,7 @@ router.get('/', isAllow, async (req, res) => {
 
         if (course.promo_price) {
           totalPrice += course.price;
-          totalPromoPrice += course.promo_price;
+          totalPromoPrice += course.price - course.promo_price;
         } else {
           totalPrice += course.price;
         }
@@ -68,9 +68,9 @@ router.get('/', isAllow, async (req, res) => {
           teacher_name: course.teacher.full_name,
           thumbnail: course.course_assets.url,
         });
-      } else if (class_id) {
-        const kelas = await Kelas.findOne({
-          where: { id: class_id },
+      } else if (webinar_id) {
+        const webinar = await Webinar.findOne({
+          where: { id: webinar_id },
           include: [
             {
               model: Teacher,
@@ -82,39 +82,40 @@ router.get('/', isAllow, async (req, res) => {
                 type: 'thumbnail',
               },
               attributes: ['url'],
-              as: 'class_assets',
+              as: 'webinar_assets',
             },
           ],
         });
 
-        if (kelas.promo_price) {
-          totalPrice += kelas.price;
-          totalPromoPrice += kelas.promo_price;
+        if (webinar.promo_price) {
+          totalPrice += webinar.price;
+          totalPromoPrice += webinar.price - webinar.promo_price;
         } else {
-          totalPrice += kelas.price;
+          totalPrice += webinar.price;
         }
 
         carts_payload.push({
           cart_id: carts[i].id,
-          class_id: kelas.id,
-          type: 'class',
-          teacher_id: kelas.teacher_id,
-          title: kelas.title,
-          price: kelas.price,
-          promo_price: kelas.promo_price,
-          teacher_name: kelas.teacher.full_name,
-          thumbnail: kelas.class_assets.url,
+          webinar_id: webinar.id,
+          type: 'webinar',
+          teacher_id: webinar.teacher_id,
+          title: webinar.title,
+          price: webinar.price,
+          promo_price: webinar.promo_price,
+          teacher_name: webinar.teacher.full_name,
+          thumbnail: webinar.webinar_assets.url,
         });
       }
     }
 
     if (totalPromoPrice !== 0) {
-      percentage = ((totalPrice - totalPromoPrice) / totalPrice) * 100;
+      percentage = (totalPromoPrice / totalPrice) * 100;
     }
 
     const prices = {
       total_price: totalPrice,
       total_promo_price: totalPromoPrice,
+      final_price: totalPrice - totalPromoPrice,
       percentage,
     };
 
@@ -131,10 +132,10 @@ router.get('/', isAllow, async (req, res) => {
 
 router.post('/', isAllow, async (req, res) => {
   const { user } = res.locals;
-  const { course_id, class_id } = req.body;
+  const { course_id, webinar_id } = req.body;
 
-  if (!course_id && !class_id) {
-    return res.status(400).json(response(400, 'course id atau class id harus ada'));
+  if (!course_id && !webinar_id) {
+    return res.status(400).json(response(400, 'course id atau webinar id harus ada'));
   }
 
   if (user.type !== 'student') {
@@ -159,20 +160,20 @@ router.post('/', isAllow, async (req, res) => {
         student_id: user.id,
         course_id,
       });
-    } else if (class_id) {
-      cart = await Cart.findOne({ where: { student_id: user.id, class_id } });
+    } else if (webinar_id) {
+      cart = await Cart.findOne({ where: { student_id: user.id, webinar_id } });
       if (cart) {
-        return res.status(400).json(response(400, 'Kelas sudah ditambahkan di cart'));
+        return res.status(400).json(response(400, 'Webinar sudah ditambahkan di cart'));
       }
 
-      const kelas = await Kelas.findOne({ where: { id: class_id } });
-      if (!kelas) {
-        return res.status(400).json(response(400, 'Kelas tidak di temukan'));
+      const webinar = await Webinar.findOne({ where: { id: webinar_id } });
+      if (!webinar) {
+        return res.status(400).json(response(400, 'Webinar tidak di temukan'));
       }
 
       cart = await Cart.create({
         student_id: user.id,
-        class_id,
+        webinar_id,
       });
     }
 

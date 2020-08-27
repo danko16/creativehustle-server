@@ -4,11 +4,11 @@ const sequelize = require('sequelize');
 const sharp = require('sharp');
 const { query, param, body, validationResult } = require('express-validator');
 const {
-  classes: Kelas,
+  webinars: Webinar,
   digital_assets: Asset,
   extra_matters: ExtraMatter,
   teachers: Teacher,
-  class_schedules: ClassSchedule,
+  webinar_schedules: WebinarSchedule,
 } = require('../models');
 const {
   auth: { isAllow },
@@ -101,7 +101,7 @@ router.post(
           .resize(420, 260)
           .toFile(filePath, (err, info) => {});
 
-        const kelas = await Kelas.create(
+        const webinar = await Webinar.create(
           {
             teacher_id: user.id,
             title,
@@ -113,18 +113,18 @@ router.post(
             approved: false,
             type,
             topics,
-            class_assets: {
+            webinar_assets: {
               url: urlPath,
               path: filePath,
               filename: file.filename,
               type: 'thumbnail',
             },
           },
-          { include: { model: Asset, as: 'class_assets' } }
+          { include: { model: Asset, as: 'webinar_assets' } }
         );
 
         const payload = Object.freeze({
-          kelas_id: kelas.id,
+          webinar_id: webinar.id,
           title,
           price,
           promo_price,
@@ -135,8 +135,9 @@ router.post(
           thumbnail: urlPath,
         });
 
-        return res.status(200).json(response(200, 'Berhasil Upload Kelas', payload));
+        return res.status(200).json(response(200, 'Berhasil Upload Webinar', payload));
       } catch (error) {
+        console.log(error);
         return res.status(500).json(response(500, 'Internal Server Error!', error));
       }
     });
@@ -147,7 +148,7 @@ router.post(
   '/jadwal',
   isAllow,
   [
-    body('class_id', 'class id should be present').exists(),
+    body('webinar_id', 'webinars id should be present').exists(),
     body('schedules', 'scheduldes should be present')
       .exists()
       .isArray()
@@ -160,34 +161,35 @@ router.post(
     }
 
     const { user } = res.locals;
-    const { schedules, class_id } = req.body;
+    const { schedules, webinar_id } = req.body;
 
     if (user.type !== 'teacher') {
       return res.status(400).json(response(400, 'anda tidak terdaftar sebagai mentor!'));
     }
 
     try {
-      const kelas = await Kelas.findOne({ where: { id: class_id } });
-      if (!kelas) {
-        return res.status(400).json(response(400, 'kelas tidak ditemukan!'));
+      const webinar = await Webinar.findOne({ where: { id: webinar_id } });
+      if (!webinar) {
+        return res.status(400).json(response(400, 'webinar tidak ditemukan!'));
       }
       for (let i = 0; i < schedules.length; i++) {
-        await ClassSchedule.create({
-          class_id,
+        await WebinarSchedule.create({
+          webinar_id,
           ...schedules[i],
         });
       }
       return res.status(200).json(response(200, 'Berhasil Menambahkan Jadwal'));
     } catch (error) {
+      console.log(error);
       return res.status(500).json(response(500, 'Internal Server Error!', error));
     }
   }
 );
 
 router.post(
-  '/:class_id/tambahan',
+  '/:webinar_id/tambahan',
   isAllow,
-  [param('class_id', 'class id should be present').exists()],
+  [param('webinar_id', 'webinars id should be present').exists()],
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -195,16 +197,16 @@ router.post(
     }
 
     const { user } = res.locals;
-    const { class_id } = req.params;
+    const { webinar_id } = req.params;
 
     if (user.type !== 'teacher') {
       return res.status(400).json(response(400, 'anda tidak terdaftar sebagai mentor!'));
     }
 
-    const kelas = await Kelas.findOne({ where: { id: class_id } });
+    const webinar = await Webinar.findOne({ where: { id: webinar_id } });
 
-    if (!kelas) {
-      return res.status(400).json(response(400, 'kelas tidak di temukan!'));
+    if (!webinar) {
+      return res.status(400).json(response(400, 'webinar tidak di temukan!'));
     }
 
     uploads(req, res, async function (error) {
@@ -223,7 +225,7 @@ router.post(
           const urlPath = `${config.serverDomain}/${servePath}`;
 
           const extraMatter = await ExtraMatter.create({
-            class_id,
+            webinar_id,
             title: files[i].title ? files[i].title : 'this is development',
           });
 
@@ -252,7 +254,7 @@ router.get('/', [query('from', 'from must be present').exists()], async (req, re
   const { from } = req.query;
 
   try {
-    const kelas = await Kelas.findAll({
+    const webinar = await Webinar.findAll({
       where: {
         id: { [Op.gt]: from },
         approved: true,
@@ -262,7 +264,7 @@ router.get('/', [query('from', 'from must be present').exists()], async (req, re
       include: [
         {
           model: Asset,
-          as: 'class_assets',
+          as: 'webinar_assets',
           attributes: ['url'],
           where: {
             type: 'thumbnail',
@@ -273,16 +275,16 @@ router.get('/', [query('from', 'from must be present').exists()], async (req, re
           attributes: ['full_name', 'job', 'biography'],
         },
         {
-          model: ClassSchedule,
+          model: WebinarSchedule,
           required: true,
           attributes: { exclude: ['createdAt', 'updatedAt'] },
         },
       ],
     }).map((el) => el.get({ plain: true }));
 
-    const classes = [];
-    for (let i = 0; i < kelas.length; i++) {
-      const schedules = kelas[i].class_schedules;
+    const webinars = [];
+    for (let i = 0; i < webinar.length; i++) {
+      const schedules = webinar[i].webinar_schedules;
       schedules.sort((a, b) => {
         const aDate = a.date.split('-');
         const bDate = b.date.split('-');
@@ -304,26 +306,26 @@ router.get('/', [query('from', 'from must be present').exists()], async (req, re
         return startDate - endDate;
       });
 
-      classes.push({
-        id: kelas[i].id,
-        teacher_id: kelas[i].teacher_id,
-        title: kelas[i].title,
-        desc: kelas[i].desc,
+      webinars.push({
+        id: webinar[i].id,
+        teacher_id: webinar[i].teacher_id,
+        title: webinar[i].title,
+        desc: webinar[i].desc,
         start_date: schedules[0],
         end_date: schedules[schedules.length - 1],
-        sections: JSON.parse(kelas[i].sections),
-        price: kelas[i].price,
-        promo_price: kelas[i].promo_price,
-        type: kelas[i].type,
-        topics: kelas[i].topics,
-        teacher_name: kelas[i].teacher.full_name,
-        teacher_job: kelas[i].teacher.job,
-        teacher_biography: kelas[i].teacher.biography,
-        thumbnail: kelas[i].class_assets.url,
+        sections: JSON.parse(webinar[i].sections),
+        price: webinar[i].price,
+        promo_price: webinar[i].promo_price,
+        type: webinar[i].type,
+        topics: webinar[i].topics,
+        teacher_name: webinar[i].teacher.full_name,
+        teacher_job: webinar[i].teacher.job,
+        teacher_biography: webinar[i].teacher.biography,
+        thumbnail: webinar[i].webinar_assets.url,
       });
     }
 
-    return res.status(200).json(response(200, 'Berhasil mendapatkan kelas', classes));
+    return res.status(200).json(response(200, 'Berhasil mendapatkan webinar', webinars));
   } catch (error) {
     return res.status(500).json(response(500, 'Internal Server Error!', error));
   }
@@ -337,7 +339,7 @@ router.get('/cari', [query('keywords', 'keywords must be present').exists()], as
   const { keywords } = req.query;
 
   try {
-    const kelas = await Kelas.findAll({
+    const webinar = await Webinar.findAll({
       where: {
         title: { [Op.like]: `%${keywords}%` },
       },
@@ -346,7 +348,7 @@ router.get('/cari', [query('keywords', 'keywords must be present').exists()], as
       include: [
         {
           model: Asset,
-          as: 'class_assets',
+          as: 'webinar_assets',
           attributes: ['url'],
           where: {
             type: 'thumbnail',
@@ -357,16 +359,16 @@ router.get('/cari', [query('keywords', 'keywords must be present').exists()], as
           attributes: ['full_name'],
         },
         {
-          model: ClassSchedule,
+          model: WebinarSchedule,
           required: true,
           attributes: { exclude: ['createdAt', 'updatedAt'] },
         },
       ],
     }).map((el) => el.get({ plain: true }));
 
-    const classes = [];
-    for (let i = 0; i < kelas.length; i++) {
-      const schedules = kelas[i].class_schedules;
+    const webinars = [];
+    for (let i = 0; i < webinar.length; i++) {
+      const schedules = webinar[i].webinar_schedules;
       schedules.sort((a, b) => {
         const aDate = a.date.split('-');
         const bDate = b.date.split('-');
@@ -388,22 +390,22 @@ router.get('/cari', [query('keywords', 'keywords must be present').exists()], as
         return startDate - endDate;
       });
 
-      classes.push({
-        id: kelas[i].id,
-        teacher_id: kelas[i].teacher_id,
-        title: kelas[i].title,
-        desc: kelas[i].desc,
+      webinars.push({
+        id: webinar[i].id,
+        teacher_id: webinar[i].teacher_id,
+        title: webinar[i].title,
+        desc: webinar[i].desc,
         start_date: schedules[0],
         end_date: schedules[schedules.length - 1],
-        sections: JSON.parse(kelas[i].sections),
-        price: kelas[i].price,
-        promo_price: kelas[i].promo_price,
-        teacher_name: kelas[i].teacher.full_name,
-        thumbnail: kelas[i].class_assets.url,
+        sections: JSON.parse(webinar[i].sections),
+        price: webinar[i].price,
+        promo_price: webinar[i].promo_price,
+        teacher_name: webinar[i].teacher.full_name,
+        thumbnail: webinar[i].webinar_assets.url,
       });
     }
 
-    return res.status(200).json(response(200, 'Berhasil mendapatkan kelas', classes));
+    return res.status(200).json(response(200, 'Berhasil mendapatkan webinar', webinars));
   } catch (error) {
     return res.status(500).json(response(500, 'Internal Server Error!', error));
   }

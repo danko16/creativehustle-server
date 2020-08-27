@@ -1,9 +1,9 @@
 const express = require('express');
-const { param } = require('express-validator');
+const { param, body, validationResult } = require('express-validator');
 const {
-  classes: Kelas,
-  my_classes: MyClass,
-  class_schedules: ClassSchedule,
+  webinars: Webinar,
+  my_webinars: MyWebinar,
+  webinar_schedules: WebinarSchedule,
   digital_assets: Asset,
   teachers: Teacher,
   extra_matters: ExtraMatter,
@@ -23,18 +23,18 @@ router.get('/', isAllow, async (req, res) => {
   }
 
   try {
-    let myClass = await MyClass.findAll({
+    let myWebinar = await MyWebinar.findAll({
       where: {
         student_id: user.id,
       },
       attributes: { exclude: ['createdAt', 'updatedAt'] },
       include: {
-        model: Kelas,
+        model: Webinar,
         attributes: { exclude: ['desc', 'sections', 'createdAt', 'updatedAt'] },
         include: [
           {
             model: Asset,
-            as: 'class_assets',
+            as: 'webinar_assets',
             attributes: ['url'],
             where: {
               type: 'thumbnail',
@@ -45,17 +45,17 @@ router.get('/', isAllow, async (req, res) => {
             attributes: ['full_name'],
           },
           {
-            model: ClassSchedule,
+            model: WebinarSchedule,
             attributes: { exclude: ['createdAt', 'updatedAt'] },
           },
         ],
       },
     });
 
-    const classes = [];
-    for (let i = 0; i < myClass.length; i++) {
-      const kelas = myClass[i].get('class', { plain: true });
-      const schedules = kelas.class_schedules;
+    const webinars = [];
+    for (let i = 0; i < myWebinar.length; i++) {
+      const webinar = myWebinar[i].get('webinar', { plain: true });
+      const schedules = webinar.webinar_schedules;
       schedules.sort((a, b) => {
         const aDate = a.date.split('-');
         const bDate = b.date.split('-');
@@ -77,44 +77,44 @@ router.get('/', isAllow, async (req, res) => {
         return startDate - endDate;
       });
 
-      classes.push({
-        id: kelas.id,
-        teacher_id: kelas.teacher_id,
-        title: kelas.title,
-        tel_group: kelas.tel_group,
+      webinars.push({
+        id: webinar.id,
+        teacher_id: webinar.teacher_id,
+        title: webinar.title,
+        tel_group: webinar.tel_group,
         start_date: schedules[0],
         end_date: schedules[schedules.length - 1],
-        thumbnail: kelas.class_assets.url,
-        teacher_name: kelas.teacher.full_name,
+        thumbnail: webinar.webinar_assets.url,
+        teacher_name: webinar.teacher.full_name,
       });
     }
 
-    return res.status(200).json(response(200, 'Berhasil mendapatkan kelas', classes));
+    return res.status(200).json(response(200, 'Berhasil mendapatkan webinar', webinars));
   } catch (error) {
     return res.status(500).json(response(500, 'Internal Server Error!', error));
   }
 });
 
 router.get(
-  '/:class_id/jadwal',
+  '/:webinar_id/jadwal',
   isAllow,
-  [param('class_id', 'class id should be present').exists()],
+  [param('webinar_id', 'webinars id should be present').exists()],
   async (req, res) => {
     const { user } = res.locals;
-    const { class_id } = req.params;
+    const { webinar_id } = req.params;
 
     if (user.type !== 'student') {
       return res.status(400).json(response(400, 'Anda tidak terdaftar sebagai siswa'));
     }
     try {
-      let myClasses = await MyClass.findOne({
+      let myWebinares = await MyWebinar.findOne({
         where: {
-          class_id,
+          webinar_id,
           student_id: user.id,
         },
         attributes: { exclude: ['createdAt', 'updatedAt'] },
         include: {
-          model: Kelas,
+          model: Webinar,
           attributes: { exclude: ['desc', 'sections', 'createdAt', 'updatedAt'] },
           include: [
             {
@@ -122,7 +122,7 @@ router.get(
               attributes: ['full_name'],
             },
             {
-              model: ClassSchedule,
+              model: WebinarSchedule,
               attributes: { exclude: ['createdAt', 'updatedAt'] },
             },
             {
@@ -142,19 +142,19 @@ router.get(
         },
       });
 
-      if (!myClasses) {
-        return res.status(400).json(response(400, 'anda tidak terdaftar kelas ini!'));
+      if (!myWebinares) {
+        return res.status(400).json(response(400, 'anda tidak terdaftar webinar ini!'));
       }
 
-      const kelas = myClasses.get('class', { plain: true });
-      const materiTambahan = kelas.extra_matters.map((el) => ({
+      const webinar = myWebinares.get('webinar', { plain: true });
+      const materiTambahan = webinar.extra_matters.map((el) => ({
         id: el.id,
-        class_id: el.class_id,
+        webinar_id: el.webinar_id,
         title: el.title,
         matter: el.extra_matter_assets.url,
       }));
 
-      const schedules = kelas.class_schedules;
+      const schedules = webinar.webinar_schedules;
       schedules.sort((a, b) => {
         const aDate = a.date.split('-');
         const bDate = b.date.split('-');
@@ -167,9 +167,63 @@ router.get(
       const payload = {
         schedules,
         materi_tambahan: materiTambahan,
-        tel_group: kelas.tel_group,
+        tel_group: webinar.tel_group,
       };
       return res.status(200).json(response(200, 'Berhasil mendapatkan jadwal', payload));
+    } catch (error) {
+      return res.status(500).json(response(500, 'Internal Server Error!', error));
+    }
+  }
+);
+
+router.post(
+  '/free',
+  isAllow,
+  [body('webinar_id', 'webinar id should be present').exists()],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json(response(422, errors.array()));
+    }
+
+    const { user } = res.locals;
+    const { webinar_id } = req.body;
+
+    if (user.type !== 'student') {
+      return res.status(400).json(response(400, 'Anda tidak terdaftar sebagai siswa'));
+    }
+    try {
+      const webinar = await Webinar.findOne({
+        where: { id: webinar_id },
+        attributes: { exclude: ['createdAt', 'updatedAt'] },
+        include: {
+          model: WebinarSchedule,
+          attributes: { exclude: ['createdAt', 'updatedAt'] },
+        },
+      });
+
+      if (!webinar) {
+        return res.status(400).json(response(400, 'Webinar tidak di temukan'));
+      }
+
+      if (webinar.type !== 'free') {
+        return res.status(400).json(response(400, 'Webinar tidak gratis'));
+      }
+
+      let webinarSaya = await MyWebinar.findOne({ where: { webinar_id, student_id: user.id } });
+
+      if (webinarSaya) {
+        return res
+          .status(200)
+          .json(response(200, 'Anda sudah mengikuti webinar ini', { already_followed: true }));
+      }
+
+      webinarSaya = await MyWebinar.create({
+        webinar_id,
+        student_id: user.id,
+      });
+
+      return res.status(200).json(response(200, 'Berhasil Mengikuti Webinar', { ok: true }));
     } catch (error) {
       return res.status(500).json(response(500, 'Internal Server Error!', error));
     }

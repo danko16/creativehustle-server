@@ -11,6 +11,7 @@ const {
   digital_assets: Asset,
   course_recommendations: CourseRecommendation,
   extra_matters: ExtraMatter,
+  sequelize,
 } = require('../models');
 const {
   auth: { isAllow },
@@ -76,6 +77,8 @@ router.get('/', isAllow, async (req, res) => {
         price: myCourse.price,
         promo_price: myCourse.promo_price,
         teacher_name: myCourse.teacher.full_name,
+        participant: myCourse.participant,
+        rating: JSON.parse(myCourse.rating),
         thumbnail: myCourse.course_assets.url,
         first_content: myContent[0].id,
         progress,
@@ -224,7 +227,6 @@ router.patch(
       });
       return res.status(200).json(response(200, 'Status berhasil di ubah', { ok: true }));
     } catch (error) {
-      console.log(error);
       return res.status(500).json(response(500, 'Internal Server Error!', error));
     }
   }
@@ -313,6 +315,8 @@ router.get('/rekomendasi', isAllow, async (req, res) => {
         title: course.title,
         price: course.price,
         promo_price: course.promo_price,
+        participant: course.participant,
+        rating: JSON.parse(course.rating),
         teacher_name: course.teacher.full_name,
         thumbnail: course.course_assets.url,
       });
@@ -322,5 +326,91 @@ router.get('/rekomendasi', isAllow, async (req, res) => {
     return res.status(500).json(response(500, 'Internal Server Error!', error));
   }
 });
+
+router.post(
+  '/free',
+  isAllow,
+  [body('course_id', 'course id must be present').exists()],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json(response(422, errors.array()));
+    }
+
+    const { user } = res.locals;
+    const { course_id } = req.body;
+
+    if (user.type !== 'student') {
+      return res.status(400).json(response(400, 'Anda tidak terdaftar sebagai siswa'));
+    }
+    const transaction = await sequelize.transaction();
+
+    try {
+      const course = await Course.findOne({
+        where: { id: course_id },
+        include: [
+          {
+            model: Section,
+            attributes: { exclude: ['createdAt', 'updatedAt'] },
+          },
+          {
+            model: Content,
+            attributes: { exclude: ['createdAt', 'updatedAt'] },
+          },
+        ],
+      });
+      if (!course) {
+        return res.status(400).json(response(400, 'Kursus tidak di temukan'));
+      }
+
+      if (course.type !== 'free') {
+        return res.status(400).json(response(400, 'Kursus ini tidak gratis'));
+      }
+
+      let kursusSaya = await MyCourse.findOne({
+        where: {
+          course_id,
+          student_id: user.id,
+        },
+      });
+
+      if (kursusSaya) {
+        return res
+          .status(200)
+          .json(response(200, 'Anda sudah mengikuti kursus ini', { already_followed: true }));
+      }
+
+      const contents = course.get('contents', { plain: true });
+      const done = {};
+
+      for (let i = 0; i < contents.length; i++) {
+        const { id } = contents[i];
+        done[id] = false;
+      }
+
+      kursusSaya = await MyCourse.create(
+        {
+          course_id,
+          student_id: user.id,
+          done: JSON.stringify(done),
+        },
+        { transaction }
+      );
+
+      await course.update(
+        {
+          participant: course.participant + 1,
+        },
+        { transaction }
+      );
+
+      await transaction.commit();
+      return res.status(200).json(response(200, 'Berhasil mengikuti kursus!', { ok: true }));
+    } catch (error) {
+      await transaction.rollback();
+      return res.status(500).json(response(500, 'Internal Server Error!', error));
+    }
+  }
+);
 
 module.exports = router;

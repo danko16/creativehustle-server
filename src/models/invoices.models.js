@@ -21,7 +21,7 @@ module.exports = function (sequelize, DataTypes) {
         allowNull: true,
         type: DataTypes.TEXT,
       },
-      classes_id: {
+      webinars_id: {
         allowNull: true,
         type: DataTypes.TEXT,
       },

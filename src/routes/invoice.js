@@ -1,7 +1,7 @@
 const express = require('express');
 const {
   courses: Course,
-  classes: Kelas,
+  webinars: Webinar,
   invoices: Invoice,
   digital_assets: Asset,
 } = require('../models');
@@ -102,7 +102,7 @@ router.get(
         totalPromoPrice = 0,
         percentage = 0;
       let courses = [],
-        classes = [],
+        webinars = [],
         carts_payload = [];
 
       if (invoice.courses_id) {
@@ -113,44 +113,46 @@ router.get(
             course_id: courses[i].id,
             title: courses[i].title,
             price: courses[i].price,
+            promo_price: courses[i].promo_price,
             type: 'course',
           });
           if (courses[i].promo_price) {
             totalPrice += courses[i].price;
-            totalPromoPrice += courses[i].promo_price;
+            totalPromoPrice += courses[i].price - courses[i].promo_price;
           } else {
             totalPrice += courses[i].price;
           }
         }
       }
 
-      if (invoice.classes_id) {
-        const classesId = JSON.parse(invoice.classes_id);
-        classes = await Kelas.findAll({ where: { id: classesId } });
-        for (let i = 0; i < classes.length; i++) {
+      if (invoice.webinars_id) {
+        const webinarsId = JSON.parse(invoice.webinars_id);
+        webinars = await Webinar.findAll({ where: { id: webinarsId } });
+        for (let i = 0; i < webinars.length; i++) {
           carts_payload.push({
-            class_id: classes[i].id,
-            title: classes[i].title,
-            price: classes[i].price,
-            promo_price: classes[i].promo_price,
-            type: 'class',
+            webinar_id: webinars[i].id,
+            title: webinars[i].title,
+            price: webinars[i].price,
+            promo_price: webinars[i].promo_price,
+            type: 'webinar',
           });
-          if (classes[i].promo_price) {
-            totalPrice += classes[i].price;
-            totalPromoPrice += classes[i].promo_price;
+          if (webinars[i].promo_price) {
+            totalPrice += webinars[i].price;
+            totalPromoPrice += webinars[i].price - webinars[i].promo_price;
           } else {
-            totalPrice += classes[i].price;
+            totalPrice += webinars[i].price;
           }
         }
       }
 
       if (totalPromoPrice !== 0) {
-        percentage = ((totalPrice - totalPromoPrice) / totalPrice) * 100;
+        percentage = (totalPromoPrice / totalPrice) * 100;
       }
 
       const payload = {
         total_price: totalPrice,
         total_promo_price: totalPromoPrice,
+        final_price: totalPrice - totalPromoPrice,
         percentage,
         ...invoice.get({ plain: true }),
         carts: carts_payload,
@@ -171,10 +173,10 @@ router.post(
       .exists()
       .isArray()
       .withMessage('courses id must be an array'),
-    body('classes_id', 'classes id must be present')
+    body('webinars_id', 'webinars id must be present')
       .exists()
       .isArray()
-      .withMessage('classes id must be an array'),
+      .withMessage('webinars id must be an array'),
   ],
   async (req, res) => {
     const errors = validationResult(req);
@@ -183,12 +185,12 @@ router.post(
     }
 
     const { user } = res.locals;
-    const { courses_id, classes_id } = req.body;
+    const { courses_id, webinars_id } = req.body;
 
-    if (!courses_id.length && !classes_id.length) {
+    if (!courses_id.length && !webinars_id.length) {
       return res
         .status(400)
-        .json(response(400, 'courses id atau classes id array harus memiliki nilai'));
+        .json(response(400, 'courses id atau webinars id array harus memiliki nilai'));
     }
 
     if (user.type !== 'student') {
@@ -200,7 +202,7 @@ router.post(
         totalPromoPrice = 0,
         percentage = 0;
       const courses_invoice_id = [],
-        classes_invoice_id = [],
+        webinars_invoice_id = [],
         carts_payload = [];
       if (courses_id.length) {
         const courses = await Course.findAll({ where: { id: courses_id } });
@@ -219,33 +221,33 @@ router.post(
 
           if (courses[i].promo_price) {
             totalPrice += courses[i].price;
-            totalPromoPrice += courses[i].promo_price;
+            totalPromoPrice += courses[i].price - courses[i].promo_price;
           } else {
             totalPrice += courses[i].price;
           }
         }
       }
 
-      if (classes_id.length) {
-        const classes = await Kelas.findAll({ where: { id: classes_id } });
-        if (!classes.length) {
-          return res.status(400).json(response(400, 'kelas tidak di temukan'));
+      if (webinars_id.length) {
+        const webinars = await Webinar.findAll({ where: { id: webinars_id } });
+        if (!webinars.length) {
+          return res.status(400).json(response(400, 'webinar tidak di temukan'));
         }
 
-        for (let i = 0; i < classes.length; i++) {
-          classes_invoice_id.push(classes[i].id);
+        for (let i = 0; i < webinars.length; i++) {
+          webinars_invoice_id.push(webinars[i].id);
           carts_payload.push({
-            course_id: classes[i].id,
-            title: classes[i].title,
-            price: classes[i].price,
-            type: 'class',
+            webinar_id: webinars[i].id,
+            title: webinars[i].title,
+            price: webinars[i].price,
+            type: 'webinar',
           });
 
-          if (classes[i].promo_price) {
-            totalPrice += classes[i].price;
-            totalPromoPrice += classes[i].promo_price;
+          if (webinars[i].promo_price) {
+            totalPrice += webinars[i].price;
+            totalPromoPrice += webinars[i].price - webinars[i].promo_price;
           } else {
-            totalPrice += classes[i].price;
+            totalPrice += webinars[i].price;
           }
         }
       }
@@ -258,14 +260,14 @@ router.post(
         student_id: user.id,
         date: Date.now(),
         expired,
-        total_amount: totalPromoPrice !== 0 ? totalPromoPrice : totalPrice,
+        total_amount: totalPrice - totalPromoPrice,
         status: 'unpaid',
         courses_id: courses_invoice_id.length ? JSON.stringify(courses_invoice_id) : null,
-        classes_id: classes_invoice_id.length ? JSON.stringify(classes_invoice_id) : null,
+        webinars_id: webinars_invoice_id.length ? JSON.stringify(webinars_invoice_id) : null,
       });
 
       if (totalPromoPrice !== 0) {
-        percentage = ((totalPrice - totalPromoPrice) / totalPrice) * 100;
+        percentage = (totalPromoPrice / totalPrice) * 100;
       }
 
       invoice = await Invoice.findOne({
@@ -286,6 +288,7 @@ router.post(
       const payload = {
         total_price: totalPrice,
         total_promo_price: totalPromoPrice,
+        final_price: totalPrice - totalPromoPrice,
         percentage,
         ...invoice.get({ plain: true }),
         carts: carts_payload,

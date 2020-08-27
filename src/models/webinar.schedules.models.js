@@ -1,6 +1,6 @@
 module.exports = function (sequelize, DataTypes) {
-  const ClassSchedules = sequelize.define(
-    'class_schedules',
+  const WebinarSchedules = sequelize.define(
+    'webinar_schedules',
     {
       id: {
         type: DataTypes.INTEGER,
@@ -8,12 +8,12 @@ module.exports = function (sequelize, DataTypes) {
         allowNull: false,
         autoIncrement: true,
       },
-      class_id: {
+      webinar_id: {
         type: DataTypes.INTEGER,
         foreignKey: true,
         allowNull: false,
         references: {
-          model: 'classes',
+          model: 'webinars',
           key: 'id',
         },
       },
@@ -49,10 +49,10 @@ module.exports = function (sequelize, DataTypes) {
     { timestamps: true, underscored: true }
   );
 
-  ClassSchedules.associate = function (models) {
-    ClassSchedules.belongsTo(models.classes, {
-      foreignKey: 'class_id',
+  WebinarSchedules.associate = function (models) {
+    WebinarSchedules.belongsTo(models.webinars, {
+      foreignKey: 'webinar_id',
     });
   };
-  return ClassSchedules;
+  return WebinarSchedules;
 };

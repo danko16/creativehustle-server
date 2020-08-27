@@ -5,12 +5,12 @@ const {
   invoices: Invoice,
   courses: Course,
   students: Student,
-  classes: Kelas,
+  webinars: Webinar,
   contents: Content,
   digital_assets: Asset,
-  class_schedules: ClassSchedule,
+  webinar_schedules: WebinarSchedule,
   my_courses: MyCourse,
-  my_classes: MyClass,
+  my_webinars: MyWebinars,
   sections: Section,
   sequelize,
 } = require('../models');
@@ -116,7 +116,6 @@ router.post(
         }
 
         let discountPercentage = 0,
-          discountTotal = 0,
           total = 0,
           totalPromo = 0;
         const carts = [];
@@ -156,7 +155,7 @@ router.post(
             });
 
             if (promo_price) {
-              totalPromo += promo_price;
+              totalPromo += price - promo_price;
             }
             total += price;
 
@@ -194,29 +193,29 @@ router.post(
           }
         }
 
-        if (invoice.classes_id) {
-          const classes = await Kelas.findAll({
+        if (invoice.webinars_id) {
+          const webinars = await Webinar.findAll({
             where: {
-              id: JSON.parse(invoice.classes_id),
+              id: JSON.parse(invoice.webinars_id),
             },
             attributes: { exclude: ['createdAt', 'updatedAt'] },
             include: {
-              model: ClassSchedule,
+              model: WebinarSchedule,
               attributes: { exclude: ['createdAt', 'updatedAt'] },
             },
           });
 
-          for (let i = 0; i < classes.length; i++) {
-            const { id: class_id, promo_price, price, title } = classes[i];
-            let kelasSaya = await MyClass.findOne({
+          for (let i = 0; i < webinars.length; i++) {
+            const { id: webinar_id, promo_price, price, title } = webinars[i];
+            let webinarSaya = await MyWebinars.findOne({
               where: {
-                class_id,
+                webinar_id,
                 student_id: invoice.student_id,
               },
             });
 
             if (promo_price) {
-              totalPromo += promo_price;
+              totalPromo += price - promo_price;
             }
             total += price;
 
@@ -226,10 +225,10 @@ router.post(
               price: formatNumber(price),
             });
 
-            if (!kelasSaya) {
-              kelasSaya = await MyClass.create(
+            if (!webinarSaya) {
+              webinarSaya = await MyWebinars.create(
                 {
-                  class_id: classes[i].id,
+                  webinar_id: webinars[i].id,
                   student_id: invoice.student_id,
                 },
                 { transaction }
@@ -239,8 +238,7 @@ router.post(
         }
 
         if (totalPromo !== 0) {
-          discountTotal = total - totalPromo;
-          discountPercentage = (discountTotal / total) * 100;
+          discountPercentage = (totalPromo / total) * 100;
         }
 
         let destName;
@@ -266,8 +264,8 @@ router.post(
           expired: convertSlashDate(invoice.expired),
           subTotal: formatNumber(total),
           discountPercentage: `${Math.floor(discountPercentage)}`,
-          discount: formatNumber(discountTotal),
-          total: `${formatNumber(totalPromo ? totalPromo : total)}`,
+          discount: formatNumber(totalPromo),
+          total: `${formatNumber(total - totalPromo)}`,
         });
 
         const browser = await puppeteer.launch();
@@ -302,8 +300,8 @@ router.post(
           userName: student.full_name,
           carts,
           discountPercentage: `${Math.floor(discountPercentage)}%`,
-          discountTotal: `${formatNumber(discountTotal)}`,
-          total: `${formatNumber(totalPromo ? totalPromo : total)}`,
+          discountTotal: `${formatNumber(totalPromo)}`,
+          total: `${formatNumber(total - totalPromo)}`,
           sender: {
             account: invoice.sender_account,
             name: invoice.sender_account_name,

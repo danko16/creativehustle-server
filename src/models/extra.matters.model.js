@@ -17,12 +17,12 @@ module.exports = function (sequelize, DataTypes) {
           key: 'id',
         },
       },
-      class_id: {
+      webinar_id: {
         type: DataTypes.INTEGER,
         allowNull: true,
         foreignKey: true,
         references: {
-          model: 'classes',
+          model: 'webinars',
           key: 'id',
         },
       },
@@ -47,8 +47,8 @@ module.exports = function (sequelize, DataTypes) {
       foreignKey: 'course_id',
     });
 
-    ExtraMatters.belongsTo(models.classes, {
-      foreignKey: 'class_id',
+    ExtraMatters.belongsTo(models.webinars, {
+      foreignKey: 'webinar_id',
     });
 
     ExtraMatters.hasOne(models.digital_assets, {

@@ -462,7 +462,14 @@ router.get('/cari', [query('keywords', 'keywords should be presents')], async (r
         benefit: JSON.parse(kursus[i].benefit),
         price: kursus[i].price,
         promo_price: kursus[i].promo_price,
+        topics: kursus[i].topics,
+        level: kursus[i].level,
+        type: kursus[i].type,
+        rating: JSON.parse(kursus[i].rating),
+        participant: kursus[i].participant,
         teacher_name: kursus[i].teacher.full_name,
+        teacher_job: kursus[i].teacher.job,
+        teacher_biography: kursus[i].teacher.biography,
         thumbnail: kursus[i].course_assets.url,
       });
     }

@@ -87,7 +87,7 @@ module.exports = function (sequelize, DataTypes) {
       foreignKey: 'teacher_id',
     });
 
-    Teachers.hasMany(models.classes, {
+    Teachers.hasMany(models.webinars, {
       foreignKey: 'teacher_id',
     });
 
