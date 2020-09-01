@@ -37,5 +37,6 @@ app.use('/cart', require('./routes/cart'));
 app.use('/invoice', require('./routes/invoice'));
 app.use('/admin', limitedAccess, require('./routes/admin'));
 app.use('/kontak-kami', limitedAccess, require('./routes/contact-us'));
+app.use('/mentor', require('./routes/mentor'));
 
 module.exports = app;

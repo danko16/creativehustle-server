@@ -2,6 +2,7 @@ const express = require('express');
 const sequelize = require('sequelize');
 const multer = require('multer');
 const fs = require('fs');
+const sharp = require('sharp');
 const { body, query, validationResult } = require('express-validator');
 const passport = require('./passport');
 const url = require('url');
@@ -513,6 +514,12 @@ router.patch(
           servePath = `uploads/${file.filename}`;
           filePath = `${file.destination}/${file.filename}`;
           urlPath = `${config.serverDomain}/${servePath}`;
+
+          const sharpFile = await sharp(filePath).toBuffer();
+
+          sharp(sharpFile)
+            .resize(245, 245)
+            .toFile(filePath, (err, info) => {});
         }
 
         let payload;
