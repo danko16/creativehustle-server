@@ -3,6 +3,7 @@ const {
   courses: Course,
   webinars: Webinar,
   invoices: Invoice,
+  coupons: Coupon,
   digital_assets: Asset,
 } = require('../models');
 const { body, query, param, validationResult } = require('express-validator');
@@ -105,6 +106,13 @@ router.get(
         webinars = [],
         carts_payload = [];
 
+      const coupons_id = JSON.parse(invoice.coupons_id);
+      const coupons = await Coupon.findAll({ where: { id: coupons_id } });
+
+      for (let i = 0; i < coupons.length; i++) {
+        totalPromoPrice += coupons[i].discounts;
+      }
+
       if (invoice.courses_id) {
         const coursesId = JSON.parse(invoice.courses_id);
         courses = await Course.findAll({ where: { id: coursesId } });
@@ -177,6 +185,10 @@ router.post(
       .exists()
       .isArray()
       .withMessage('webinars id must be an array'),
+    body('coupons_id', 'coupons id must be present')
+      .exists()
+      .isArray()
+      .withMessage('coupons id must be an array'),
   ],
   async (req, res) => {
     const errors = validationResult(req);
@@ -185,7 +197,7 @@ router.post(
     }
 
     const { user } = res.locals;
-    const { courses_id, webinars_id } = req.body;
+    const { courses_id, webinars_id, coupons_id } = req.body;
 
     if (!courses_id.length && !webinars_id.length) {
       return res
@@ -203,7 +215,16 @@ router.post(
         percentage = 0;
       const courses_invoice_id = [],
         webinars_invoice_id = [],
+        coupons_invoice_id = [],
         carts_payload = [];
+
+      const coupons = await Coupon.findAll({ where: { id: coupons_id } });
+
+      for (let i = 0; i < coupons.length; i++) {
+        totalPromoPrice += coupons[i].discounts;
+        coupons_invoice_id.push(coupons[i].id);
+      }
+
       if (courses_id.length) {
         const courses = await Course.findAll({ where: { id: courses_id } });
         if (!courses.length) {
@@ -264,6 +285,7 @@ router.post(
         status: 'unpaid',
         courses_id: courses_invoice_id.length ? JSON.stringify(courses_invoice_id) : null,
         webinars_id: webinars_invoice_id.length ? JSON.stringify(webinars_invoice_id) : null,
+        coupons_id: coupons_invoice_id.length ? JSON.stringify(coupons_invoice_id) : null,
       });
 
       if (totalPromoPrice !== 0) {

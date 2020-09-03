@@ -166,6 +166,13 @@ router.post(
         if (!student) {
           return res.status(400).json(response(400, 'Siswa tidak di temukan'));
         }
+
+        const coupons_id = JSON.parse(invoice.coupons_id);
+        const coupons = await Coupon.findAll({ where: { id: coupons_id } });
+
+        for (let i = 0; i < coupons.length; i++) {
+          totalPromo += coupons[i].discounts;
+        }
         if (invoice.courses_id) {
           const courses = await Course.findAll({
             where: {
