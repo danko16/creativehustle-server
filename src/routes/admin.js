@@ -12,6 +12,7 @@ const {
   my_courses: MyCourse,
   my_webinars: MyWebinars,
   sections: Section,
+  coupons: Coupon,
   sequelize,
 } = require('../models');
 const {
@@ -63,6 +64,43 @@ router.post(
         },
       });
       return res.status(200).json(response(200, 'Login berhasil', payload));
+    } catch (error) {
+      return res.status(500).json(response(500, 'Internal server error'));
+    }
+  }
+);
+
+router.post(
+  '/coupon',
+  isAllow,
+  [
+    body('name', 'name must be present').exists(),
+    body('discounts', 'discounts must be present')
+      .exists()
+      .isNumeric()
+      .withMessage('discounts must be numeric'),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json(response(422, errors.array()));
+    }
+
+    const { user } = res.locals;
+    const { name, discounts } = req.body;
+
+    if (user.type !== 'admin') {
+      return res.status(400).json(response(400, 'Anda tidak terdaftar sebagai admin'));
+    }
+
+    try {
+      let coupon = await Coupon.findOne({ where: { name } });
+      if (coupon) {
+        return res.status(400).json(response(400, 'Coupon already exists'));
+      }
+
+      coupon = await Coupon.create({ name: name.toUpperCase(), discounts });
+      return res.status(200).json(response(200, 'Berhasil Menambahkan Kode Kupon', coupon));
     } catch (error) {
       return res.status(500).json(response(500, 'Internal server error'));
     }

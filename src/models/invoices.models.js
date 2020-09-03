@@ -69,6 +69,10 @@ module.exports = function (sequelize, DataTypes) {
         allowNull: false,
         type: DataTypes.STRING,
       },
+      coupons_id: {
+        allowNull: true,
+        type: DataTypes.TEXT,
+      },
       createdAt: {
         allowNull: false,
         type: DataTypes.DATE,

@@ -8,32 +8,9 @@ module.exports = function (sequelize, DataTypes) {
         autoIncrement: true,
         type: DataTypes.INTEGER,
       },
-      teacher_id: {
-        foreignKey: true,
+      name: {
+        type: DataTypes.STRING,
         allowNull: false,
-        type: DataTypes.INTEGER,
-        references: {
-          model: 'teachers',
-          key: 'id',
-        },
-      },
-      course_id: {
-        foreignKey: true,
-        allowNull: true,
-        type: DataTypes.INTEGER,
-        references: {
-          model: 'courses',
-          key: 'id',
-        },
-      },
-      webinar_id: {
-        foreignKey: true,
-        allowNull: true,
-        type: DataTypes.INTEGER,
-        references: {
-          model: 'webinars',
-          key: 'id',
-        },
       },
       discounts: {
         type: DataTypes.INTEGER,
@@ -51,19 +28,7 @@ module.exports = function (sequelize, DataTypes) {
     { timestamps: true, underscored: true }
   );
 
-  Coupons.associate = function (models) {
-    Coupons.belongsTo(models.courses, {
-      foreignKey: 'course_id',
-    });
-
-    Coupons.belongsTo(models.webinars, {
-      foreignKey: 'webinar_id',
-    });
-
-    Coupons.belongsTo(models.teachers, {
-      foreignKey: 'teacher_id',
-    });
-  };
+  Coupons.associate = function (models) {};
 
   return Coupons;
 };

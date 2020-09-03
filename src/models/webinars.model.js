@@ -95,11 +95,6 @@ module.exports = function (sequelize, DataTypes) {
       foreignKey: 'webinar_id',
       onDelete: 'CASCADE',
     });
-
-    Webinars.hasMany(models.coupons, {
-      foreignKey: 'webinar_id',
-      onDelete: 'CASCADE',
-    });
   };
 
   return Webinars;

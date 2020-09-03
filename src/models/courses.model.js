@@ -126,11 +126,6 @@ module.exports = function (sequelize, DataTypes) {
       foreignKey: 'course_id',
       onDelete: 'CASCADE',
     });
-
-    Courses.hasMany(models.coupons, {
-      foreignKey: 'course_id',
-      onDelete: 'CASCADE',
-    });
   };
 
   return Courses;

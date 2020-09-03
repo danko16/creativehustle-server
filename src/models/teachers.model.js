@@ -90,10 +90,6 @@ module.exports = function (sequelize, DataTypes) {
     Teachers.hasMany(models.webinars, {
       foreignKey: 'teacher_id',
     });
-
-    Teachers.hasMany(models.coupons, {
-      foreignKey: 'teacher_id',
-    });
   };
 
   return Teachers;

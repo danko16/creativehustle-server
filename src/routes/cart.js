@@ -4,6 +4,7 @@ const {
   courses: Course,
   webinars: Webinar,
   teachers: Teacher,
+  coupons: Coupon,
   digital_assets: Asset,
 } = require('../models');
 const {
@@ -129,6 +130,37 @@ router.get('/', isAllow, async (req, res) => {
     return res.status(500).json(response(500, 'Internal Server Error!', error));
   }
 });
+
+router.get(
+  '/coupon',
+  isAllow,
+  [query('coupon_name', 'coupon name must be provided').exists()],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json(response(422, errors.array()));
+    }
+
+    const { user } = res.locals;
+    const { coupon_name } = req.query;
+    if (user.type !== 'student') {
+      return res.status(400).json(response(400, 'Anda tidak terdaftar sebagai siswa'));
+    }
+
+    try {
+      const coupon = await Coupon.findOne({
+        where: { name: coupon_name },
+        attributes: { exclude: ['createdAt', 'updatedAt'] },
+      });
+      if (!coupon) {
+        return res.status(400).json(response(400, 'Kupon tidak di temukan'));
+      }
+      return res.status(200).json(response(200, 'Berhasil Mendapatkan Kupon', coupon));
+    } catch (err) {
+      return res.status(500).json(response(500, 'Internal Server Error!'));
+    }
+  }
+);
 
 router.post('/', isAllow, async (req, res) => {
   const { user } = res.locals;
