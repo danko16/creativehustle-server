@@ -9,7 +9,10 @@ const {
   sections: Section,
   contents: Content,
   teachers: Teacher,
+  my_courses: MyCourse,
+  ratings: Rating,
   extra_matters: ExtraMatter,
+  sequelize,
 } = require('../models');
 const {
   auth: { isAllow },
@@ -478,5 +481,111 @@ router.get('/cari', [query('keywords', 'keywords should be presents')], async (r
     return res.status(500).json(response(500, 'Internal Server Error!', error));
   }
 });
+
+router.post(
+  '/review',
+  isAllow,
+  [
+    body('course_id', 'course id must be present').exists(),
+    body('message', 'message must be present').exists(),
+    body('rating', 'rating must be present').exists(),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json(response(422, errors.array()));
+    }
+
+    const { user } = res.locals;
+    const { course_id, message, rating } = req.body;
+
+    if (user.type !== 'student') {
+      return res.status(400).json(response(400, 'Anda tidak terdaftar sebagai siswa!'));
+    }
+
+    const transaction = await sequelize.transaction();
+    try {
+      const course = await Course.findOne({ where: { id: course_id } });
+      if (!course) {
+        return res.status(400).json(response(400, 'Kursus tidak di temukan'));
+      }
+
+      const myCourse = await MyCourse.findOne({ where: { course_id, student_id: user.id } });
+      if (!myCourse) {
+        return res.status(400).json(response(400, 'Anda tidak terdaftar di kursus ini'));
+      }
+
+      const review = await Rating.create(
+        {
+          course_id,
+          student_id: user.id,
+          message,
+          rating: parseFloat(rating),
+        },
+        { transaction }
+      );
+
+      const ratings = await Rating.findAll({
+        where: { course_id },
+        group: ['rating'],
+        attributes: ['rating', [sequelize.fn('COUNT', 'rating'), 'count']],
+      }).map((el) => el.get({ plain: true }));
+
+      let oneStar = 0,
+        twoStar = 0,
+        threeStar = 0,
+        fourStar = 0,
+        fiveStar = 0,
+        reviewer = 0;
+
+      ratings.forEach((val) => {
+        switch (val.rating) {
+          case 1:
+            oneStar += val.count;
+            reviewer += val.count;
+            break;
+          case 2:
+            twoStar += val.count;
+            reviewer += val.count;
+            break;
+          case 3:
+            threeStar += val.count;
+            reviewer += val.count;
+            break;
+          case 4:
+            fourStar += val.count;
+            reviewer += val.count;
+            break;
+          case 5:
+            fiveStar += val.count;
+            reviewer += val.count;
+            break;
+          default:
+            break;
+        }
+      });
+
+      const ratingPercentage =
+        (1 * oneStar + 2 * twoStar + 3 * threeStar + 4 * fourStar + 5 * fiveStar) / reviewer;
+
+      const courseRating = JSON.parse(course.rating);
+      courseRating.star = Math.round((ratingPercentage + Number.EPSILON) * 100) / 100;
+      courseRating.reviewer = reviewer;
+
+      await course.update(
+        {
+          rating: JSON.stringify(courseRating),
+        },
+        { transaction }
+      );
+
+      await transaction.commit();
+      return res.status(200).json(response(200, 'Berhasil Memberikan Review', review));
+    } catch (error) {
+      await transaction.rollback();
+      return res.status(500).json(response(500, 'Internal Server Error!', error));
+    }
+  }
+);
 
 module.exports = router;
