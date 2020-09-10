@@ -3641,6 +3641,14 @@ node-addon-api@^3.0.0:
   resolved "https://registry.yarnpkg.com/node-addon-api/-/node-addon-api-3.0.0.tgz#812446a1001a54f71663bed188314bba07e09247"
   integrity sha512-sSHCgWfJ+Lui/u+0msF3oyCgvdkhxDbkCS6Q8uiJquzOimkJBvX6hl5aSSA7DR1XbMpdM8r7phjcF63sF4rkKg==
 
+node-cron@^2.0.3:
+  version "2.0.3"
+  resolved "https://registry.yarnpkg.com/node-cron/-/node-cron-2.0.3.tgz#b9649784d0d6c00758410eef22fa54a10e3f602d"
+  integrity sha512-eJI+QitXlwcgiZwNNSRbqsjeZMp5shyajMR81RZCqeW0ZDEj4zU9tpd4nTh/1JsBiKbF8d08FCewiipDmVIYjg==
+  dependencies:
+    opencollective-postinstall "^2.0.0"
+    tz-offset "0.0.1"
+
 nodemailer@6.4.0:
   version "6.4.0"
   resolved "https://registry.yarnpkg.com/nodemailer/-/nodemailer-6.4.0.tgz#91482ebc09d39156d933eb9e6159642cd27bf02c"
@@ -3778,6 +3786,11 @@ open@^6.4.0:
   integrity sha512-IFenVPgF70fSm1keSd2iDBIDIBZkroLeuffXq+wKTzTJlBpesFWojV9lb8mzOfaAzM1sr7HQHuO0vtV0zYekGg==
   dependencies:
     is-wsl "^1.1.0"
+
+opencollective-postinstall@^2.0.0:
+  version "2.0.3"
+  resolved "https://registry.yarnpkg.com/opencollective-postinstall/-/opencollective-postinstall-2.0.3.tgz#7a0fff978f6dbfa4d006238fbac98ed4198c3259"
+  integrity sha512-8AV/sCtuzUeTo8gQK5qDZzARrulB3egtLzFgteqB2tcT4Mw7B8Kt7JcDHmltjz6FOAHsvTevk70gZEbhM4ZS9Q==
 
 opencollective-postinstall@^2.0.2:
   version "2.0.2"
@@ -5421,6 +5434,11 @@ typescript@^3.9.3:
   version "3.9.3"
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.9.3.tgz#d3ac8883a97c26139e42df5e93eeece33d610b8a"
   integrity sha512-D/wqnB2xzNFIcoBG9FG8cXRDjiqSTbG2wd8DMZeQyJlP1vfTkIxH4GKveWaEBYySKIg+USu+E+EDIR47SqnaMQ==
+
+tz-offset@0.0.1:
+  version "0.0.1"
+  resolved "https://registry.yarnpkg.com/tz-offset/-/tz-offset-0.0.1.tgz#fef920257024d3583ed9072a767721a18bdb8a76"
+  integrity sha512-kMBmblijHJXyOpKzgDhKx9INYU4u4E1RPMB0HqmKSgWG8vEcf3exEfLh4FFfzd3xdQOw9EuIy/cP0akY6rHopQ==
 
 uc.micro@^1.0.1:
   version "1.0.6"

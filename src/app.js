@@ -2,9 +2,12 @@ const express = require('express');
 const passport = require('passport');
 const app = express();
 const helmet = require('helmet');
+const cron = require('node-cron');
 const cors = require('cors');
 const RateLimit = require('express-rate-limit');
 const config = require('../config');
+const { events, observe } = require('./eventemitter');
+const EVENT = require('./eventemitter/constants');
 
 const limitedAccess = new RateLimit({
   windowMs: 1 * 60 * 1000, // 15 minutes
@@ -27,6 +30,19 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 app.use('/uploads', express.static(config.uploads));
 app.use('/documents', express.static(config.documents));
+
+events.CronInvoiceStatus.listenCronInvoiceStatus();
+
+cron.schedule(
+  '00 00 00 * * *',
+  () => {
+    observe.emit(EVENT.CRON_INVOICE_STATUS);
+  },
+  {
+    scheduled: true,
+    timezone: 'Asia/Jakarta',
+  }
+);
 
 app.use('/auth', limitedAccess, require('./routes/auth'));
 app.use('/kursus', require('./routes/kursus'));
