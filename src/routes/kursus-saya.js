@@ -1,5 +1,5 @@
 const express = require('express');
-const { body, param, validationResult } = require('express-validator');
+const { body, query, param, validationResult } = require('express-validator');
 const { Op } = require('sequelize');
 const {
   courses: Course,
@@ -11,11 +11,13 @@ const {
   digital_assets: Asset,
   course_recommendations: CourseRecommendation,
   extra_matters: ExtraMatter,
+  reviews: Review,
   sequelize,
 } = require('../models');
 const {
   auth: { isAllow },
   response,
+  ratings: { getRatings },
 } = require('../utils');
 
 const router = express.Router();
@@ -126,6 +128,13 @@ router.get(
                 attributes: { exclude: ['createdAt', 'updatedAt'] },
               },
               {
+                model: Review,
+                where: {
+                  student_id: user.id,
+                },
+                required: false,
+              },
+              {
                 model: ExtraMatter,
                 required: false,
                 attributes: { exclude: ['createdAt', 'updatedAt'] },
@@ -152,6 +161,7 @@ router.get(
       const done = JSON.parse(myCourse.done);
       const myContents = myCourse.course.get('contents', { plain: true });
       const sections = myCourse.course.get('sections', { plain: true });
+      const review = myCourse.course.get('reviews', { plain: true })[0];
       const materiTambahan = myCourse.course.get('extra_matters', { plain: true }).map((el) => ({
         id: el.id,
         course_id: el.course_id,
@@ -174,6 +184,7 @@ router.get(
           contents,
           materi_tambahan: materiTambahan,
           tel_group: myCourse.course.tel_group,
+          review: review ? review : null,
         })
       );
     } catch (error) {
@@ -409,6 +420,147 @@ router.post(
     } catch (error) {
       await transaction.rollback();
       return res.status(500).json(response(500, 'Internal Server Error!', error));
+    }
+  }
+);
+
+router.post(
+  '/review',
+  isAllow,
+  [
+    body('course_id', 'course id must be present').exists(),
+    body('message', 'message must be present').exists(),
+    body('rating', 'rating must be present').exists(),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json(response(422, errors.array()));
+    }
+
+    const { user } = res.locals;
+    const { course_id, message, rating } = req.body;
+
+    if (user.type !== 'student') {
+      return res.status(400).json(response(400, 'Anda tidak terdaftar sebagai siswa!'));
+    }
+
+    if (rating > 5) {
+      return res.status(400).json(response(400, 'Rating tidak boleh lebih dari 5!'));
+    }
+
+    const transaction = await sequelize.transaction();
+    try {
+      const course = await Course.findOne({ where: { id: course_id } });
+      if (!course) {
+        return res.status(400).json(response(400, 'Kursus tidak di temukan'));
+      }
+
+      const myCourse = await MyCourse.findOne({ where: { course_id, student_id: user.id } });
+      if (!myCourse) {
+        return res.status(400).json(response(400, 'Anda tidak terdaftar di kursus ini'));
+      }
+
+      let review = await Review.findOne({ where: { course_id, student_id: user.id } });
+
+      if (review) {
+        await review.update({ message, rating: parseFloat(rating) }, { transaction });
+      } else {
+        await Review.create(
+          {
+            course_id,
+            student_id: user.id,
+            message,
+            rating: parseFloat(rating),
+          },
+          { transaction }
+        );
+      }
+
+      const reviews = await Review.findAll({
+        where: { course_id },
+        group: ['rating'],
+        attributes: ['rating', [sequelize.fn('COUNT', 'rating'), 'count']],
+        transaction,
+      }).map((el) => el.get({ plain: true }));
+
+      const courseRating = getRatings(reviews);
+
+      await course.update(
+        {
+          rating: JSON.stringify(courseRating),
+        },
+        { transaction }
+      );
+
+      review = await Review.findOne({ where: { course_id, student_id: user.id }, transaction });
+
+      await transaction.commit();
+      return res.status(201).json(response(201, 'Berhasil Memberikan Review', review));
+    } catch (error) {
+      await transaction.rollback();
+      return res.status(500).json(response(500, 'Internal Server Error!', error));
+    }
+  }
+);
+
+router.delete(
+  '/review',
+  isAllow,
+  [query('course_id', 'course id must be present').exists()],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json(response(422, errors.array()));
+    }
+
+    const { user } = res.locals;
+    const { course_id } = req.query;
+
+    if (user.type !== 'student') {
+      return res.status(400).json(response(400, 'Anda tidak terdaftar sebagai siswa!'));
+    }
+
+    const transaction = await sequelize.transaction();
+    try {
+      const course = await Course.findOne({ where: { id: course_id } });
+      if (!course) {
+        return res.status(400).json(response(400, 'Kursus tidak di temukan'));
+      }
+
+      const myCourse = await MyCourse.findOne({ where: { course_id, student_id: user.id } });
+      if (!myCourse) {
+        return res.status(400).json(response(400, 'Anda tidak terdaftar di kursus ini'));
+      }
+
+      const review = await Review.findOne({ where: { student_id: user.id, course_id } });
+      if (!review) {
+        return res.status(400).json(response(400, 'Review tidak di temukan'));
+      }
+
+      await Review.destroy({ where: { student_id: user.id, course_id } });
+
+      const reviews = await Review.findAll({
+        where: { course_id },
+        group: ['rating'],
+        attributes: ['rating', [sequelize.fn('COUNT', 'rating'), 'count']],
+        transaction,
+      }).map((el) => el.get({ plain: true }));
+
+      const courseRating = getRatings(reviews);
+
+      await course.update(
+        {
+          rating: JSON.stringify(courseRating),
+        },
+        { transaction }
+      );
+
+      await transaction.commit();
+      return res.status(200).json(response(200, 'Berhasil Menghapus Review'));
+    } catch (error) {
+      await transaction.rollback();
+      return res.status(500).json(response(500, 'Internal Server Error!'));
     }
   }
 );

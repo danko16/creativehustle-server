@@ -102,7 +102,7 @@ module.exports = function (sequelize, DataTypes) {
       onDelete: 'CASCADE',
     });
 
-    Courses.hasMany(models.ratings, {
+    Courses.hasMany(models.reviews, {
       foreignKey: 'course_id',
       onDelete: 'CASCADE',
     });

@@ -1,6 +1,6 @@
 module.exports = function (sequelize, DataTypes) {
-  const Ratings = sequelize.define(
-    'ratings',
+  const Reviews = sequelize.define(
+    'reviews',
     {
       id: {
         allowNull: false,
@@ -50,15 +50,15 @@ module.exports = function (sequelize, DataTypes) {
     }
   );
 
-  Ratings.associate = function (models) {
-    Ratings.belongsTo(models.courses, {
+  Reviews.associate = function (models) {
+    Reviews.belongsTo(models.courses, {
       foreignKey: 'course_id',
     });
 
-    Ratings.belongsTo(models.students, {
+    Reviews.belongsTo(models.students, {
       foreignKey: 'student_id',
     });
   };
 
-  return Ratings;
+  return Reviews;
 };
