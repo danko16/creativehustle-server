@@ -10,7 +10,7 @@ const { events, observe } = require('./eventemitter');
 const EVENT = require('./eventemitter/constants');
 
 const limitedAccess = new RateLimit({
-  windowMs: 1 * 60 * 1000, // 15 minutes
+  windowMs: 1 * 60 * 1000, // 1 minutes
   max: 15,
   delayMs: 0,
   statusCode: 500,
@@ -54,5 +54,6 @@ app.use('/invoice', require('./routes/invoice'));
 app.use('/admin', limitedAccess, require('./routes/admin'));
 app.use('/kontak-kami', limitedAccess, require('./routes/contact-us'));
 app.use('/mentor', require('./routes/mentor'));
+app.use('/category', require('./routes/category'));
 
 module.exports = app;

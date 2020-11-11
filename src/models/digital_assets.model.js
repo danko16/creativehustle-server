@@ -24,6 +24,15 @@ module.exports = function (sequelize, DataTypes) {
         allowNull: false,
         type: DataTypes.STRING,
       },
+      admin_id: {
+        allowNull: true,
+        foreignKey: true,
+        type: DataTypes.INTEGER,
+        references: {
+          model: 'admins',
+          key: 'id',
+        },
+      },
       student_id: {
         allowNull: true,
         foreignKey: true,
@@ -78,6 +87,15 @@ module.exports = function (sequelize, DataTypes) {
           key: 'id',
         },
       },
+      category_id: {
+        allowNull: true,
+        foreignKey: true,
+        type: DataTypes.INTEGER,
+        references: {
+          model: 'categories',
+          key: 'id',
+        },
+      },
       createdAt: {
         allowNull: false,
         type: DataTypes.DATE,
@@ -94,6 +112,10 @@ module.exports = function (sequelize, DataTypes) {
   );
 
   DigitalAssets.associate = function (models) {
+    DigitalAssets.belongsTo(models.admins, {
+      foreignKey: 'admin_id',
+    });
+
     DigitalAssets.belongsTo(models.students, {
       foreignKey: 'student_id',
     });
@@ -115,7 +137,11 @@ module.exports = function (sequelize, DataTypes) {
     });
 
     DigitalAssets.belongsTo(models.invoices, {
-      foreignKey: 'extra_matter_id',
+      foreignKey: 'invoice_id',
+    });
+
+    DigitalAssets.belongsTo(models.categories, {
+      foreignKey: 'category_id',
     });
   };
 

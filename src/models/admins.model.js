@@ -41,7 +41,7 @@ module.exports = function (sequelize, DataTypes) {
   );
 
   Admins.associate = function (models) {
-    Admins.hasOne(models.digital_assets, {
+    Admins.hasMany(models.digital_assets, {
       foreignKey: 'admin_id',
       as: 'admin_assets',
       onDelete: 'CASCADE',

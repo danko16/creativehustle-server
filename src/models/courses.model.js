@@ -17,6 +17,15 @@ module.exports = function (sequelize, DataTypes) {
           key: 'id',
         },
       },
+      module_id: {
+        allowNull: true,
+        type: DataTypes.INTEGER,
+        foreignKey: true,
+        references: {
+          model: 'modules',
+          key: 'id',
+        },
+      },
       title: {
         allowNull: false,
         type: DataTypes.STRING,
@@ -125,6 +134,15 @@ module.exports = function (sequelize, DataTypes) {
     Courses.hasMany(models.carts, {
       foreignKey: 'course_id',
       onDelete: 'CASCADE',
+    });
+
+    Courses.hasMany(models.course_topics, {
+      foreignKey: 'course_id',
+      onDelete: 'CASCADE',
+    });
+
+    Courses.belongsTo(models.modules, {
+      foreignKey: 'module_id',
     });
   };
 

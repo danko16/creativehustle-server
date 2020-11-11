@@ -1,16 +1,16 @@
 {
-  "name": "server",
-  "version": "1.0.0",
+  "name": "creativehustle-server",
+  "version": "1.1.0",
   "description": "",
+  "author": "https://github.com/danko16",
   "main": "index.js",
+  "license": "wtfpl",
   "scripts": {
     "start": "node src/",
     "dev": "node_modules/.bin/nodemon --exec node src/",
     "eslint": "node_modules/.bin/eslint --fix src/ --config .eslintrc"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",
     "crypto-js": "^4.0.0",
